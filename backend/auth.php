@@ -1,11 +1,4 @@
 <?php
-// ============================================================
-//  ThinkFast  |  backend/auth.php
-//  Handles login, register, and guest session creation
-//
-//  POST /backend/auth.php
-//  Body: { "action": "login"|"register"|"guest", ... }
-// ============================================================
 
 require_once __DIR__ . '/config.php';
 
@@ -14,7 +7,6 @@ $action = $body['action'] ?? '';
 
 switch ($action) {
 
-    // ── Login ────────────────────────────────────────────────
     case 'login': {
         $username = trim($body['username'] ?? '');
         $password = trim($body['password'] ?? '');
@@ -41,7 +33,6 @@ switch ($action) {
         ]);
     }
 
-    // ── Register ─────────────────────────────────────────────
     case 'register': {
         $username = trim($body['username'] ?? '');
         $password = trim($body['password'] ?? '');
@@ -77,7 +68,6 @@ switch ($action) {
         ]);
     }
 
-    // ── Guest ────────────────────────────────────────────────
     case 'guest': {
         $name = trim($body['name'] ?? 'Guest');
         if (empty($name)) $name = 'Guest';
@@ -91,7 +81,6 @@ switch ($action) {
         ]);
     }
 
-    // ── Update stats ─────────────────────────────────────────
     case 'stats': {
         $username = trim($body['username'] ?? '');
         $wins     = (int)($body['wins']    ?? 0);

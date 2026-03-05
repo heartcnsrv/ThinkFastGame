@@ -1,13 +1,8 @@
-// ============================================================
-//  ThinkFast  |  src/core/GameTypes.cpp
-// ============================================================
-
 #include "GameTypes.h"
 #include <algorithm>
 
 namespace ThinkFast {
 
-// ── Player ────────────────────────────────────────────────────
 
 std::string Player::statsStr() const {
     return "W:" + std::to_string(wins) +
@@ -15,7 +10,6 @@ std::string Player::statsStr() const {
            " G:" + std::to_string(games);
 }
 
-// ── GameSession ───────────────────────────────────────────────
 
 Player* GameSession::currentPlayer() {
     if (players.empty()) return nullptr;
@@ -37,4 +31,4 @@ int GameSession::activePlayers() const {
     return count;
 }
 
-} // namespace ThinkFast
+} 

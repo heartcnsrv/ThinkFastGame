@@ -1,33 +1,24 @@
 <?php
-// ============================================================
-//  ThinkFast  |  backend/config.php
-//  Configuration constants for the multiplayer backend
-// ============================================================
 
 define('DATA_DIR',   __DIR__ . '/../data/');
 define('USERS_CSV',  DATA_DIR . 'users.csv');
 define('ROOMS_DIR',  DATA_DIR . 'rooms/');
 
-// Make sure rooms directory exists
 if (!is_dir(ROOMS_DIR)) {
     mkdir(ROOMS_DIR, 0755, true);
 }
 
-// CORS headers (allow requests from the GUI frontend)
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Always respond as JSON
 header('Content-Type: application/json');
 
-// Handle pre-flight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-// ── Helpers ───────────────────────────────────────────────────
 
 function jsonOk(array $data): void {
     echo json_encode(['ok' => true] + $data);
@@ -46,7 +37,6 @@ function input(): array {
     return is_array($data) ? $data : [];
 }
 
-// ── CSV helpers ───────────────────────────────────────────────
 
 function loadUsers(): array {
     $users = [];
@@ -87,7 +77,6 @@ function findUser(array $users, string $username): int {
     return -1;
 }
 
-// ── Room helpers ──────────────────────────────────────────────
 
 function roomPath(string $code): string {
     return ROOMS_DIR . preg_replace('/[^A-Z0-9]/', '', strtoupper($code)) . '.json';

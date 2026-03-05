@@ -1,7 +1,3 @@
-// ============================================================
-//  ThinkFast  |  src/ui/Screens.cpp
-// ============================================================
-
 #include "Screens.h"
 #include "ConsoleUI.h"
 #include "../utils/BotNames.h"
@@ -14,7 +10,6 @@ namespace ThinkFast {
 Screens::Screens(AuthManager& auth, GameEngine& engine, WordValidator& wv)
     : auth_(auth), engine_(engine), wv_(wv) {}
 
-// ── Login screen ──────────────────────────────────────────────
 
 void Screens::runLogin() {
     while (!auth_.isLoggedIn()) {
@@ -98,7 +93,6 @@ void Screens::doGuest() {
     ConsoleUI::pause(700);
 }
 
-// ── Main menu ─────────────────────────────────────────────────
 
 void Screens::runMainMenu() {
     while (true) {
@@ -128,7 +122,6 @@ void Screens::runMainMenu() {
     }
 }
 
-// ── Lobby ─────────────────────────────────────────────────────
 
 void Screens::runLobby() {
     ConsoleUI::clear();
@@ -136,7 +129,6 @@ void Screens::runLobby() {
     ConsoleUI::println(Color::BOLD + std::string("  Game Setup") + Color::RESET);
     ConsoleUI::hr();
 
-    // Mode
     const int modeChoice = ConsoleUI::menu(
         "Select game mode:",
         { "Last Letter  (each word starts with the last letter of the previous)",
@@ -144,11 +136,9 @@ void Screens::runLobby() {
     const GameMode mode = (modeChoice == 0) ? GameMode::LAST_LETTER
                                              : GameMode::ONE_BY_ONE;
 
-    // Bot count
     const int botChoice = ConsoleUI::menu("Number of bot opponents:", { "1", "2", "3" });
     const int botCount  = botChoice + 1;
 
-    // Time limit (Last Letter only)
     int timeLimit = 15;
     if (mode == GameMode::LAST_LETTER) {
         const int tChoice = ConsoleUI::menu(
@@ -158,7 +148,6 @@ void Screens::runLobby() {
         timeLimit = times[tChoice];
     }
 
-    // Build players list
     Player* me = auth_.currentPlayer();
     std::vector<Player> botPlayers(botCount);
     for (auto& b : botPlayers) {
@@ -173,13 +162,11 @@ void Screens::runLobby() {
     sess.players.push_back(me);
     for (auto& b : botPlayers) sess.players.push_back(&b);
 
-    // Run
     if (mode == GameMode::LAST_LETTER)
         engine_.runLastLetter(sess);
     else
         engine_.runOneByOne(sess);
 
-    // Save stats
     if (me && !me->is_guest)
         auth_.saveStats(*me);
 
@@ -187,7 +174,6 @@ void Screens::runLobby() {
     ConsoleUI::prompt("Press Enter to return to menu");
 }
 
-// ── Leaderboard ───────────────────────────────────────────────
 
 void Screens::runLeaderboard() {
     ConsoleUI::clear();
@@ -198,7 +184,6 @@ void Screens::runLeaderboard() {
     auto rows = auth_.leaderboard();
     const int TOP = 15;
 
-    // Header
     std::cout << Color::BOLD << Color::BLUE
               << ConsoleUI::pad("  #",  5)
               << ConsoleUI::pad("Player",    20)
@@ -227,4 +212,4 @@ void Screens::runLeaderboard() {
     ConsoleUI::prompt("Press Enter to go back");
 }
 
-} // namespace ThinkFast
+}

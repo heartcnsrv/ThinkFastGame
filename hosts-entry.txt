@@ -1,4 +1,4 @@
-# ==============================================================
+# 
 #  ThinkFast  |  Windows hosts file entry
 #
 #  Add the line below to:
@@ -6,6 +6,6 @@
 #  (open Notepad as Administrator to edit it)
 #
 #  This makes http://thinkfast resolve to your own machine.
-# ==============================================================
+# 
 
 127.0.0.1   thinkfast

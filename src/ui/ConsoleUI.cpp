@@ -1,7 +1,3 @@
-// ============================================================
-//  ThinkFast  |  src/ui/ConsoleUI.cpp
-// ============================================================
-
 #include "ConsoleUI.h"
 #include <iostream>
 #include <thread>
@@ -10,8 +6,6 @@
 #include <cctype>
 
 namespace ThinkFast {
-
-// ── Color constants ───────────────────────────────────────────
 
 namespace Color {
     const char* RESET     = "\033[0m";
@@ -28,13 +22,9 @@ namespace Color {
     const char* TEAL      = "\033[36m";
 }
 
-// ── Terminal control ──────────────────────────────────────────
-
 void ConsoleUI::clear()      { std::cout << "\033[2J\033[H"; std::cout.flush(); }
 void ConsoleUI::hideCursor() { std::cout << "\033[?25l"; }
 void ConsoleUI::showCursor() { std::cout << "\033[?25h"; }
-
-// ── Lines ─────────────────────────────────────────────────────
 
 void ConsoleUI::hr(const char* col, int w) {
     std::cout << col << std::string(w, '-') << Color::RESET << "\n";
@@ -43,8 +33,6 @@ void ConsoleUI::hr(const char* col, int w) {
 void ConsoleUI::dhr(const char* col, int w) {
     std::cout << col << std::string(w, '=') << Color::RESET << "\n";
 }
-
-// ── Text helpers ──────────────────────────────────────────────
 
 std::string ConsoleUI::pad(const std::string& text, int width,
                            char fill, bool right) {
@@ -59,8 +47,6 @@ std::string ConsoleUI::center(const std::string& text, int width) {
     const int p   = std::max(0, (width - vl) / 2);
     return std::string(p, ' ') + text;
 }
-
-// ── Printing ──────────────────────────────────────────────────
 
 void ConsoleUI::println(const std::string& s) {
     std::cout << s << "\n";
@@ -82,8 +68,6 @@ void ConsoleUI::warn(const std::string& s) {
     std::cout << Color::YELLOW << "  [~] " << s << Color::RESET << "\n";
 }
 
-// ── Box ───────────────────────────────────────────────────────
-
 void ConsoleUI::box(const std::vector<std::string>& lines,
                     int width,
                     const char* border,
@@ -100,8 +84,6 @@ void ConsoleUI::box(const std::vector<std::string>& lines,
     std::cout << "+" << std::string(width - 2, '-') << "+" << Color::RESET << "\n";
 }
 
-// ── Logo ──────────────────────────────────────────────────────
-
 void ConsoleUI::logo() {
     std::cout << "\n";
     std::cout << Color::BOLD << Color::BLUE;
@@ -116,13 +98,9 @@ void ConsoleUI::logo() {
     std::cout << Color::RESET << "\n";
 }
 
-// ── Wait ──────────────────────────────────────────────────────
-
 void ConsoleUI::pause(int ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
-
-// ── ANSI-aware string length ──────────────────────────────────
 
 size_t ConsoleUI::visLen(const std::string& s) {
     size_t len = 0;
@@ -134,8 +112,6 @@ size_t ConsoleUI::visLen(const std::string& s) {
     }
     return len;
 }
-
-// ── Prompts ───────────────────────────────────────────────────
 
 std::string ConsoleUI::prompt(const std::string& label, const char* col) {
     std::cout << col << "  " << label << ": " << Color::WHITE;
@@ -169,4 +145,4 @@ int ConsoleUI::menu(const std::string& title,
     }
 }
 
-} // namespace ThinkFast
+}

@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD          17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS        OFF)
 
-# ── Source files (every .cpp, NOT headers) ────────────────────
 set(SOURCES
     main.cpp
     src/core/GameTypes.cpp
@@ -22,7 +21,6 @@ add_executable(ThinkFast ${SOURCES})
 
 target_include_directories(ThinkFast PRIVATE ${CMAKE_SOURCE_DIR})
 
-# ── Compiler warnings ─────────────────────────────────────────
 if (MSVC)
     target_compile_options(ThinkFast PRIVATE /W4)
 else()
@@ -32,7 +30,6 @@ else()
     )
 endif()
 
-# ── Filesystem (GCC < 9 needs -lstdc++fs) ────────────────────
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
     AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0")
     target_link_libraries(ThinkFast PRIVATE stdc++fs)

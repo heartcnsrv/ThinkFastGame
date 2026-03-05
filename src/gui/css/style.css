@@ -1,13 +1,6 @@
-/* ============================================================
-   ThinkFast  |  src/gui/css/style.css
-   Aesthetic: Cozy arcade — warm off-whites, ink-dark accents,
-   chunky borders, playful type, game-card energy.
-   ============================================================ */
 
-/* ── Reset ────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* ── Tokens ───────────────────────────────────────────────── */
 :root {
   --cream:    #f7f3ec;
   --paper:    #faf8f4;
@@ -64,7 +57,6 @@ body {
 .screen { display: none; }
 .screen.active { display: block; }
 
-/* ── Header ───────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -119,7 +111,6 @@ body {
   padding: 4px 12px;
 }
 
-/* ── Card ─────────────────────────────────────────────────── */
 .card {
   background: var(--card);
   border: var(--border-w) solid var(--ink);
@@ -129,7 +120,6 @@ body {
   transition: box-shadow .15s, transform .15s;
 }
 
-/* ── Typography ───────────────────────────────────────────── */
 .page-title {
   font-family: var(--f-display);
   font-size: 2rem;
@@ -155,7 +145,6 @@ body {
   margin-bottom: 10px;
 }
 
-/* ── Tabs ─────────────────────────────────────────────────── */
 .tabs {
   display: flex;
   gap: 6px;
@@ -183,7 +172,6 @@ body {
 .tab:hover { color: var(--ink); background: rgba(0,0,0,.05); }
 .tab.active { background: var(--ink); color: var(--paper); }
 
-/* ── Form ─────────────────────────────────────────────────── */
 .form-group { margin-bottom: 18px; }
 
 label {
@@ -214,7 +202,6 @@ select {
 
 input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
 
-/* ── Buttons ──────────────────────────────────────────────── */
 .btn {
   border: var(--border-w) solid var(--ink);
   border-radius: var(--radius-sm);
@@ -275,7 +262,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
 .btn-full { width: 100%; }
 .btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
 
-/* ── Alerts ───────────────────────────────────────────────── */
 .alert {
   border: var(--border-w) solid;
   border-radius: var(--radius-sm);
@@ -295,7 +281,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
   margin: 20px 0;
 }
 
-/* ════════ LOGIN ════════ */
 .login-hero {
   text-align: center;
   padding: 52px 0 36px;
@@ -330,7 +315,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
 
 .login-card-wrap { max-width: 400px; margin: 0 auto; }
 
-/* ════════ MAIN MENU ════════ */
 .menu-greeting {
   font-family: var(--f-display);
   font-size: 1.7rem;
@@ -425,7 +409,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
   padding: 4px 10px;
 }
 
-/* ════════ LOBBY ════════ */
 .mode-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -470,7 +453,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
 .option-label { font-size: .82rem; font-weight: 600; color: var(--ink2); min-width: 110px; }
 .option-row select { flex: 1; }
 
-/* ════════ GAME BOARD ════════ */
 .game-header {
   display: flex;
   align-items: center;
@@ -695,7 +677,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
 .log-line.bad  { color: var(--rose); }
 .log-line.info { color: var(--ink3); }
 
-/* ════════ LEADERBOARD ════════ */
 .lb-table { width: 100%; border-collapse: collapse; }
 .lb-table th {
   border-bottom: var(--border-w) solid var(--ink);
@@ -721,7 +702,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
 .rank-num.silver { background: #e0e0e0; color: #444;    border-color: #b0b0b0; }
 .rank-num.bronze { background: #e8c09a; color: #5a3000; border-color: #c0844a; }
 
-/* ════════ MULTIPLAYER ════════ */
 .room-code-box {
   background: var(--paper);
   border: var(--border-w) solid var(--ink);
@@ -771,7 +751,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
   border-radius: 4px; padding: 1px 6px;
 }
 
-/* ════════ END OVERLAY ════════ */
 #end-overlay {
   align-items: center;
   background: rgba(26,22,18,.75);
@@ -812,7 +791,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
 .end-result.loss { color: var(--rose); }
 .end-detail { font-size: .88rem; color: var(--ink3); margin-bottom: 28px; }
 
-/* ════════ TOAST ════════ */
 #toast-area {
   position: fixed; bottom: 28px;
   left: 50%; transform: translateX(-50%);
@@ -837,7 +815,6 @@ input:focus, select:focus { box-shadow: 3px 3px 0 var(--amber); }
 @keyframes toastIn  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
 @keyframes toastOut { to   { opacity:0; transform:translateY(-6px); } }
 
-/* ════════ UTILS ════════ */
 .row  { display: flex; align-items: center; gap: 10px; }
 .col  { display: flex; flex-direction: column; }
 .mla  { margin-left: auto; }

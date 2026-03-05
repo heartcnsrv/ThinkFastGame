@@ -1,8 +1,4 @@
 #pragma once
-// ============================================================
-//  ThinkFast  |  src/core/GameTypes.h
-//  Pure type declarations — no implementation here
-// ============================================================
 
 #include <string>
 #include <vector>
@@ -44,4 +40,4 @@ struct GameSession {
     int     activePlayers() const;
 };
 
-} // namespace ThinkFast
+} 

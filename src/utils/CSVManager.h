@@ -1,8 +1,4 @@
 #pragma once
-// ============================================================
-//  ThinkFast  |  src/utils/CSVManager.h
-// ============================================================
-
 #include <string>
 #include <vector>
 
@@ -32,4 +28,4 @@ private:
     static int         safeInt(const std::string& s);
 };
 
-} // namespace ThinkFast
+}

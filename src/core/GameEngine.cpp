@@ -1,12 +1,3 @@
-// ============================================================
-//  ThinkFast  |  src/core/GameEngine.cpp
-//
-//  Human turns call WordValidator::isValid() which uses:
-//    - instant local dictionary check, then
-//    - live Free Dictionary API call if not found locally
-//  Bot turns use local dictionary only (instant).
-// ============================================================
-
 #include "GameEngine.h"
 #include "../ui/ConsoleUI.h"
 #include <iostream>
@@ -22,7 +13,6 @@ namespace ThinkFast {
 GameEngine::GameEngine(WordValidator& wv)
     : wv_(wv), rng_(std::random_device{}()) {}
 
-// ── Last-Letter mode ──────────────────────────────────────────
 
 void GameEngine::runLastLetter(GameSession& sess) {
     sess.running = true;
@@ -59,7 +49,6 @@ void GameEngine::runLastLetter(GameSession& sess) {
     endGame(sess);
 }
 
-// ── One-by-One mode ───────────────────────────────────────────
 
 void GameEngine::runOneByOne(GameSession& sess) {
     sess.running = true;
@@ -87,7 +76,6 @@ void GameEngine::runOneByOne(GameSession& sess) {
 
         const std::string candidate = sess.building + ch;
 
-        // Does the candidate form a complete valid word?
         if (candidate.size() >= 3 && wv_.isValid(candidate)) {
             sess.building = candidate;
             renderOBO(sess);
@@ -109,7 +97,6 @@ void GameEngine::runOneByOne(GameSession& sess) {
             ConsoleUI::pause(1000);
 
         } else if (!wv_.isValidPrefix(candidate)) {
-            // No word starts with this string
             cur->hearts--;
             ConsoleUI::error(cur->username + ": \"" + candidate +
                              "\" has no valid continuation. -1 heart.");
@@ -128,7 +115,6 @@ void GameEngine::runOneByOne(GameSession& sess) {
     endGame(sess);
 }
 
-// ── Rendering ─────────────────────────────────────────────────
 
 void GameEngine::renderLL(const GameSession& sess) const {
     ConsoleUI::clear();
@@ -221,7 +207,6 @@ void GameEngine::endGame(GameSession& sess) {
     ConsoleUI::pause(2000);
 }
 
-// ── Human turn: Last Letter ───────────────────────────────────
 
 bool GameEngine::doHumanTurnLL(GameSession& sess, Player& player) {
     const int limit = sess.time_limit_secs;
@@ -252,7 +237,6 @@ bool GameEngine::doHumanTurnLL(GameSession& sess, Player& player) {
         return false;
     }
 
-    // Two-layer validation: local first, then API
     std::cout << Color::DARK_GRAY << "  Checking \"" << word << "\"..." << Color::RESET;
     std::cout.flush();
 
@@ -271,13 +255,11 @@ bool GameEngine::doHumanTurnLL(GameSession& sess, Player& player) {
     return true;
 }
 
-// ── Bot turn: Last Letter ─────────────────────────────────────
 
 bool GameEngine::doBotTurnLL(GameSession& sess, Player& bot) {
     std::uniform_int_distribution<int> delay(700, 1400);
     ConsoleUI::pause(delay(rng_));
 
-    // Bots only use the local dictionary (no API latency)
     const std::string word = wv_.cpuPickWord(sess.required_letter, usedSet_, 1);
     if (word.empty()) {
         ConsoleUI::warn(bot.username + " [bot] could not find a word.");
@@ -295,7 +277,6 @@ bool GameEngine::doBotTurnLL(GameSession& sess, Player& bot) {
     return true;
 }
 
-// ── Human letter pick: One-by-One ────────────────────────────
 
 char GameEngine::getHumanLetter(Player& player) {
     std::cout << Color::CYAN << "  " << player.username
@@ -307,9 +288,6 @@ char GameEngine::getHumanLetter(Player& player) {
     return in.empty() ? '\0' : in[0];
 }
 
-// ── Timed terminal input ──────────────────────────────────────
-//  Puts the terminal into non-canonical mode and polls for input.
-//  Returns an empty string on timeout.
 
 std::string GameEngine::timedInput(int seconds) {
     struct termios oldt{}, newt{};
@@ -317,7 +295,7 @@ std::string GameEngine::timedInput(int seconds) {
     newt = oldt;
     newt.c_lflag     &= ~static_cast<tcflag_t>(ICANON);
     newt.c_cc[VMIN]   = 0;
-    newt.c_cc[VTIME]  = 1;   // poll every 0.1 s
+    newt.c_cc[VTIME]  = 1;  
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
     std::string result;
@@ -346,4 +324,4 @@ std::string GameEngine::timedInput(int seconds) {
     return result;
 }
 
-} // namespace ThinkFast
+} 

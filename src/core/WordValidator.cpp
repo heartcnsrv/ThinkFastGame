@@ -1,33 +1,19 @@
-// ============================================================
-//  ThinkFast  |  src/core/WordValidator.cpp
-//
-//  Word validation with two-layer lookup:
-//    Layer 1 — instant local dictionary (built-in + CSV)
-//    Layer 2 — Free Dictionary API via curl (for unknowns)
-//
-//  API: https://api.dictionaryapi.dev/api/v2/entries/en/<word>
-//  HTTP 200 = real word.  HTTP 404 = not found.
-// ============================================================
 
 #include "WordValidator.h"
 #include <algorithm>
 #include <cctype>
 #include <fstream>
-#include <cstdio>   // popen / pclose
+#include <cstdio> 
 #include <string>
 #include <iostream>
 
 namespace ThinkFast {
-
-// ── Constructor ───────────────────────────────────────────────
 
 WordValidator::WordValidator()
     : rng_(std::random_device{}())
 {
     buildBuiltinDictionary();
 }
-
-// ── CSV loader ────────────────────────────────────────────────
 
 void WordValidator::loadFromCSV(const std::string& filepath) {
     std::ifstream f(filepath);
@@ -36,7 +22,7 @@ void WordValidator::loadFromCSV(const std::string& filepath) {
     std::string line;
     bool first = true;
     while (std::getline(f, line)) {
-        if (first) { first = false; continue; }   // skip header row
+        if (first) { first = false; continue; } 
         std::string word = stripQuotes(trim(line));
         if (word.size() < 2) continue;
 
@@ -46,28 +32,24 @@ void WordValidator::loadFromCSV(const std::string& filepath) {
         if (!alpha) continue;
 
         std::transform(word.begin(), word.end(), word.begin(), ::tolower);
-        if (dict_.insert(word).second)             // only add if new
+        if (dict_.insert(word).second)        
             wordList_.push_back(word);
     }
 }
 
-// ── Public validation ─────────────────────────────────────────
 
 bool WordValidator::isValid(const std::string& word) {
     if (word.size() < 2) return false;
     const std::string w = toLower(word);
 
-    // Layer 1: instant local check
     if (dict_.count(w)) return true;
 
-    // Layer 2: API lookup (with session cache so we never call twice for same word)
     auto it = apiCache_.find(w);
     if (it != apiCache_.end()) return it->second;
 
     bool result = queryAPI(w);
     apiCache_[w] = result;
 
-    // If the API says it's valid, add it to the local dict for future instant lookups
     if (result) {
         dict_.insert(w);
         wordList_.push_back(w);
@@ -88,8 +70,6 @@ bool WordValidator::isValidPrefix(const std::string& prefix) const {
     return false;
 }
 
-// ── Character helpers ─────────────────────────────────────────
-
 char WordValidator::lastChar(const std::string& word) const {
     if (word.empty()) return '\0';
     return static_cast<char>(std::tolower(static_cast<unsigned char>(word.back())));
@@ -100,8 +80,6 @@ bool WordValidator::startsWithChar(const std::string& word, char ch) const {
     return std::tolower(static_cast<unsigned char>(word[0])) ==
            std::tolower(static_cast<unsigned char>(ch));
 }
-
-// ── CPU helpers ───────────────────────────────────────────────
 
 std::string WordValidator::cpuPickWord(char startLetter,
                                        const std::unordered_set<std::string>& used,
@@ -160,18 +138,7 @@ size_t WordValidator::dictionarySize() const {
     return dict_.size();
 }
 
-// ── API call via curl subprocess ──────────────────────────────
-//
-//  We invoke: curl -s -o /dev/null -w "%{http_code}"
-//             --max-time 4
-//             "https://api.dictionaryapi.dev/api/v2/entries/en/<word>"
-//
-//  This writes ONLY the HTTP status code to stdout (e.g. "200" or "404").
-//  200 = valid word.  Anything else = reject.
-//  If curl is unavailable or times out we fall back to local result (false).
-
 bool WordValidator::queryAPI(const std::string& word) const {
-    // Sanitise: only allow pure lowercase alpha
     for (unsigned char c : word)
         if (!std::isalpha(c)) return false;
 
@@ -193,7 +160,6 @@ bool WordValidator::queryAPI(const std::string& word) const {
     return code.find("200") != std::string::npos;
 }
 
-// ── Private string helpers ────────────────────────────────────
 
 std::string WordValidator::toLower(const std::string& s) {
     std::string r = s;
@@ -214,9 +180,6 @@ std::string WordValidator::stripQuotes(const std::string& s) {
     return s;
 }
 
-// ── Built-in dictionary ───────────────────────────────────────
-//  Common English words loaded at startup for instant offline play.
-//  The API handles anything not in this list.
 
 void WordValidator::buildBuiltinDictionary() {
     static const char* const WORDS[] = {
@@ -398,7 +361,7 @@ void WordValidator::buildBuiltinDictionary() {
         "turtle","twelve","twenty","typing","unique","unless","update","useful","vessel",
         "victim","vision","volume","wallet","warden","wealth","weapon","within","wonder",
         "wooden","writer","yellow","zombie",
-        nullptr  // sentinel
+        nullptr 
     };
 
     for (int i = 0; WORDS[i] != nullptr; ++i) {
@@ -408,4 +371,4 @@ void WordValidator::buildBuiltinDictionary() {
     }
 }
 
-} // namespace ThinkFast
+} 

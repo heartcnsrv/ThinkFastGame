@@ -1,7 +1,7 @@
-// ============================================================
+//
 //  ThinkFast  |  src/gui/js/game.js
 //
-//  FRONTEND ONLY — display and input.
+//  
 //  ALL logic lives in the C++ server (ThinkFastServer).
 //
 //  API calls go to /api/* which Apache proxies via proxy.php
@@ -14,13 +14,11 @@
 //  Word validation for LOCAL (vs bots) games still uses
 //  the JS local dict + /api/validate for unknown words,
 //  so the C++ WordValidator is always the authority.
-// ============================================================
+// 
 "use strict";
 
-// ── All API calls go through the PHP proxy to C++ backend ─────
 const BACKEND = '/api';
 
-// ── Word validation cache (mirrors apiCache_ in WordValidator) ─
 const _wordCache = {};
 
 // ── Built-in dictionary (same words as WordValidator::buildBuiltinDictionary) ─
@@ -205,7 +203,6 @@ const WORD_SET = new Set([
   "weapon","within","wonder","wooden","writer","yellow","zombie"
 ]);
 
-// ── Bot name generator (mirrors BotNames::random) ────────────
 const BOT_ADJ  = ["Swift","Bold","Quiet","Sharp","Calm","Bright","Sly","Wise","Grim","Keen",
                    "Stern","Witty","Eager","Proud","Deft","Nimble","Stoic","Quick","Rapid",
                    "Clever","Fierce","Steady","Brave","Mellow","Chill","Silent","Blunt","Wary"];
@@ -218,13 +215,10 @@ function randomBotName() {
          (10 + Math.floor(Math.random()*90));
 }
 
-// ── Mirrors WordValidator::lastChar ──────────────────────────
 function lastChar(w) { return w[w.length-1].toLowerCase(); }
 
-// ── Mirrors WordValidator::isValidLocal (sync, bots only) ────
 function validWordLocal(w) { return WORD_SET.has(w.toLowerCase().trim()); }
 
-// ── Mirrors WordValidator::isValidPrefix (local only) ────────
 function isValidPrefix(prefix) {
   const p = prefix.toLowerCase();
   if (p.length <= 1) return true;
@@ -232,8 +226,6 @@ function isValidPrefix(prefix) {
   return false;
 }
 
-// ── Mirrors WordValidator::cpuPickWord ───────────────────────
-// Bots use local dict only (instant, no API latency)
 function botPickWord(startLetter, usedWords) {
   const sl = startLetter.toLowerCase();
   const cands = [];
@@ -242,7 +234,6 @@ function botPickWord(startLetter, usedWords) {
   return cands[Math.floor(Math.random() * cands.length)];
 }
 
-// ── Mirrors WordValidator::cpuNextLetter ─────────────────────
 function botNextLetter(partial) {
   const p = partial.toLowerCase();
   const letters = new Set();
@@ -252,22 +243,16 @@ function botNextLetter(partial) {
   return arr[Math.floor(Math.random()*arr.length)];
 }
 
-// ── Mirrors WordValidator::randomStartWord ───────────────────
 function randomStartWord() {
   const pool = [];
   for (const w of WORD_SET) if (w.length >= 4 && w.length <= 6) pool.push(w);
   return pool[Math.floor(Math.random() * pool.length)] || "apple";
 }
 
-// ── Word validation — C++ WordValidator is the authority ─────
-// Local dict is checked first (instant, no round-trip).
-// Unknown words go to POST /api/validate → C++ WordValidator::isValid()
-// which does local dict + Free Dictionary API and returns the result.
 async function validWordAsync(w) {
   const key = w.toLowerCase().trim();
   if (_wordCache[key] !== undefined) return _wordCache[key];
   if (WORD_SET.has(key)) { _wordCache[key] = true; return true; }
-  // Ask the C++ server — it is the real source of truth
   const r = await api('validate', { word: key });
   const valid = !!(r && r.valid);
   _wordCache[key] = valid;
@@ -275,17 +260,13 @@ async function validWordAsync(w) {
   return valid;
 }
 
-// ════════════════════════════════════════════════════════════
-//  App state
-// ════════════════════════════════════════════════════════════
 
-let currentUser = null;   // mirrors Player struct (human)
-let gameState   = null;   // mirrors GameSession (local vs bots)
-let mpState     = null;   // multiplayer polling state
+let currentUser = null; 
+let gameState   = null;  
+let mpState     = null;  
 let timerInterval = null;
 let timerSeconds  = 0;
 
-// ── DOM helper ────────────────────────────────────────────────
 function $(id) { return document.getElementById(id); }
 
 function showScreen(name) {
@@ -294,7 +275,6 @@ function showScreen(name) {
   if (el) el.classList.add('active');
 }
 
-// ── Toast (mirrors ConsoleUI::success/error) ──────────────────
 function toast(msg, type = '') {
   const area = $('toast-area');
   const el = document.createElement('div');
@@ -304,7 +284,6 @@ function toast(msg, type = '') {
   setTimeout(() => el.remove(), 3200);
 }
 
-// ── API call → PHP proxy → C++ server ─────────────────────────
 async function api(endpoint, body) {
   try {
     const res  = await fetch(`${BACKEND}/${endpoint}`, {
@@ -313,7 +292,6 @@ async function api(endpoint, body) {
       body: JSON.stringify(body),
     });
     const text = await res.text();
-    // If PHP returns HTML it means: wrong path, PHP not running, or C++ server down
     if (text.trimStart().startsWith('<')) {
       console.error('[ThinkFast] Got HTML instead of JSON from', endpoint,
         '\nCheck: 1) ThinkFastServer.exe is running  2) Apache vhost config  3) PHP curl enabled');
@@ -325,11 +303,6 @@ async function api(endpoint, body) {
   }
 }
 
-// ════════════════════════════════════════════════════════════
-//  AUTH  (mirrors AuthManager.cpp)
-// ════════════════════════════════════════════════════════════
-
-// Login tab switcher
 function switchLoginTab(tab) {
   ['login','register','guest'].forEach(t => {
     $('form-' + t).style.display = (t === tab) ? 'block' : 'none';
@@ -359,7 +332,6 @@ async function doRegister() {
   const alert = $('reg-alert');
   alert.style.display = 'none';
 
-  // Mirror AuthManager validation exactly
   if (user.length < 2)  { alert.textContent = 'Username must be at least 2 characters.'; alert.style.display='block'; return; }
   if (pass.length < 3)  { alert.textContent = 'Password must be at least 3 characters.'; alert.style.display='block'; return; }
   if (pass !== pass2)   { alert.textContent = 'Passwords do not match.'; alert.style.display='block'; return; }
@@ -371,7 +343,6 @@ async function doRegister() {
   showScreen('menu');
 }
 
-// Guest login (mirrors AuthManager::loginGuest — stats not saved)
 function doGuest() {
   const name = $('guest-name').value.trim() || 'Guest';
   currentUser = { username: name, guest: true, wins: 0, losses: 0, games_played: 0 };
@@ -386,7 +357,6 @@ function doLogout() {
   showScreen('login');
 }
 
-// ── Save stats (mirrors AuthManager::saveStats — skips guests) ─
 async function saveStats() {
   if (!currentUser || currentUser.guest) return;
   await api('auth', {
@@ -398,9 +368,6 @@ async function saveStats() {
   });
 }
 
-// ════════════════════════════════════════════════════════════
-//  NAVIGATION
-// ════════════════════════════════════════════════════════════
 
 function goToLobby()       { showScreen('lobby'); }
 function goToMultiplayer() { showScreen('multiplayer'); }
@@ -423,30 +390,23 @@ async function goToLeaderboard() {
   }).join('');
 }
 
-// Lobby mode selector (mirrors Screens::runLobby mode selection)
 let selectedMode = 'last_letter';
 function selectMode(mode) {
   selectedMode = mode;
   document.querySelectorAll('.mode-tile').forEach(t => {
     t.classList.toggle('selected', t.dataset.mode === mode);
   });
-  // Show/hide time limit option — only relevant for Last Letter (mirrors Screens.cpp)
   $('time-option').style.display = (mode === 'last_letter') ? 'flex' : 'none';
 }
 
-// ════════════════════════════════════════════════════════════
-//  LOCAL GAME VS BOTS  (mirrors GameEngine.cpp exactly)
-// ════════════════════════════════════════════════════════════
 
 function startLocalGame() {
   const botCount  = parseInt($('bot-count').value);
   const timeLimit = parseInt($('time-limit').value);
 
-  // Build player list — mirrors Screens::runLobby player creation
-  // Human player comes first (current_idx starts at 0)
   const bots = Array.from({ length: botCount }, () => ({
     name: randomBotName(),
-    hearts: 3,          // matches Player.hearts = 3
+    hearts: 3, 
     eliminated: false,
     isBot: true,
   }));
@@ -458,7 +418,6 @@ function startLocalGame() {
     isBot: false,
   };
 
-  // GameSession fields — mirror GameSession struct
   gameState = {
     mode:           selectedMode,
     players:        [human, ...bots],
@@ -474,7 +433,6 @@ function startLocalGame() {
   };
 
   if (selectedMode === 'last_letter') {
-    // mirrors GameEngine::runLastLetter — pick random start word
     const start = randomStartWord();
     gameState.lastWord       = start;
     gameState.requiredLetter = lastChar(start);
@@ -485,7 +443,6 @@ function startLocalGame() {
     $('req-letter-wrap').style.display = 'flex';
     $('word-input').placeholder = 'Type a word...';
   } else {
-    // mirrors GameEngine::runOneByOne
     gameState.building = '';
     gameState.log.push({ text: 'Game started. One-by-One mode.', type: 'info' });
     $('game-mode-label').textContent = 'One-by-One';
@@ -500,14 +457,11 @@ function startLocalGame() {
   advanceToNextPlayer();
 }
 
-// ── Render game state (mirrors GameEngine::renderLL / renderOBO) ──
 function renderGame() {
   if (!gameState) return;
 
-  // Update round badge
   $('game-round-badge').textContent = 'Round ' + gameState.round;
 
-  // Word stage
   if (gameState.mode === 'last_letter') {
     $('word-value').textContent = gameState.lastWord || '-';
     if (gameState.lastWord) {
@@ -523,7 +477,6 @@ function renderGame() {
     }
   }
 
-  // Players panel — mirrors renderLL player list
   const panel = $('game-players');
   panel.innerHTML = gameState.players.map((p, i) => {
     const isActive = (i === gameState.currentIdx);
@@ -538,7 +491,6 @@ function renderGame() {
     </div>`;
   }).join('');
 
-  // Log — last 12 entries, newest at bottom
   const logEl = $('game-log');
   logEl.innerHTML = gameState.log.slice(-12).map(e =>
     `<div class="log-line ${e.type || ''}">${esc(e.text)}</div>`
@@ -546,12 +498,9 @@ function renderGame() {
   logEl.scrollTop = logEl.scrollHeight;
 }
 
-// ── Advance turn — skip eliminated players ────────────────────
-// mirrors GameSession::nextPlayer
 function advanceToNextPlayer() {
   if (!gameState || !gameState.running) return;
 
-  // Skip eliminated players
   let safety = 0;
   while (gameState.players[gameState.currentIdx].eliminated && safety++ < gameState.players.length)
     gameState.currentIdx = (gameState.currentIdx + 1) % gameState.players.length;
@@ -563,11 +512,9 @@ function advanceToNextPlayer() {
     setBannerWaiting(`${cur.name} is thinking...`);
     setInputEnabled(false);
     stopTimer();
-    // Bot delay: mirrors doBotTurnLL delay(700, 1400)
     const delay = 700 + Math.floor(Math.random() * 700);
     setTimeout(() => doBotTurn(), delay);
   } else {
-    // Human turn
     const notice = $('turn-notice');
     notice.textContent = "Your turn!";
     notice.className = 'turn-banner your-turn';
@@ -589,7 +536,6 @@ function setInputEnabled(enabled) {
   $('word-input-wrap').querySelector('.btn').disabled = !enabled;
 }
 
-// ── Timer — mirrors timedInput in GameEngine.cpp ──────────────
 function startTimer(seconds) {
   stopTimer();
   timerSeconds = seconds;
@@ -601,14 +547,12 @@ function startTimer(seconds) {
     timerSeconds--;
     const pct = Math.max(0, (timerSeconds / seconds) * 100);
     bar.style.width = pct + '%';
-    // Color changes mirror player anxiety: green → amber → red
     if (pct < 25)      bar.className = 'timer-fill danger';
     else if (pct < 50) bar.className = 'timer-fill warn';
     else               bar.className = 'timer-fill';
 
     if (timerSeconds <= 0) {
       stopTimer();
-      // mirrors doHumanTurnLL: time up = wrong turn = -1 heart
       onWrongWord("Time's up! -1 heart.");
     }
   }, 1000);
@@ -620,7 +564,6 @@ function stopTimer() {
   if (bar) { bar.style.width = '100%'; bar.className = 'timer-fill'; }
 }
 
-// ── submitWord — entry point from HTML onclick / Enter key ────
 function submitWord() {
   if (!gameState) return;
   const raw  = $('word-input').value.trim().toLowerCase();
@@ -630,26 +573,22 @@ function submitWord() {
   if (gameState.mode === 'last_letter') {
     submitLastLetterWord(raw);
   } else {
-    submitOneByOneLetter(raw[0]); // One-by-One: only first char matters
+    submitOneByOneLetter(raw[0]);
   }
 }
 
-// ── Last Letter — human turn (mirrors doHumanTurnLL exactly) ──
 async function submitLastLetterWord(word) {
   if (!gameState || !gameState.running) return;
 
-  // Must start with required letter
   if (word[0] !== gameState.requiredLetter) {
     toast(`Must start with "${gameState.requiredLetter.toUpperCase()}".`, 'bad');
     return;
   }
-  // Must not be already used (mirrors usedSet_.count check)
   if (gameState.usedWords.has(word)) {
     toast(`"${word}" was already used.`, 'bad');
     return;
   }
 
-  // Disable input while checking — mirrors "Checking..." console output
   stopTimer();
   setInputEnabled(false);
   setBannerWaiting(`Checking "${word}"...`);
@@ -658,16 +597,13 @@ async function submitLastLetterWord(word) {
 
   if (!valid) {
     toast(`"${word}" is not a recognised English word.`, 'bad');
-    // mirrors doHumanTurnLL returning false → -1 heart
     onWrongWord(`"${word}" is not a real word. -1 heart.`);
     return;
   }
 
-  // Valid word accepted — mirrors accepting word in GameEngine
   acceptWord(word);
 }
 
-// ── One-by-One — human turn (mirrors runOneByOne human branch) ─
 async function submitOneByOneLetter(letter) {
   if (!gameState || !gameState.running) return;
   if (!/^[a-z]$/.test(letter)) { toast('Type a single letter.', 'bad'); return; }
@@ -677,9 +613,7 @@ async function submitOneByOneLetter(letter) {
 
   const candidate = gameState.building + letter;
 
-  // mirrors: if (candidate.size() >= 3 && wv_.isValid(candidate))
   if (candidate.length >= 3 && validWordLocal(candidate)) {
-    // Human completed a word — everyone else loses a heart
     gameState.building = candidate;
     gameState.log.push({ text: `${currentUser.username} completed: "${candidate}"`, type: 'good' });
     renderGame();
@@ -698,7 +632,6 @@ async function submitOneByOneLetter(letter) {
     renderGame();
     if (checkEndGame()) return;
 
-    // New round — mirrors running = false / building.clear() / round++
     setTimeout(() => {
       gameState.building = '';
       gameState.round++;
@@ -707,18 +640,15 @@ async function submitOneByOneLetter(letter) {
     }, 1400);
 
   } else if (!isValidPrefix(candidate)) {
-    // mirrors: else if (!wv_.isValidPrefix(candidate)) — penalise
     gameState.log.push({ text: `"${candidate}" has no valid continuation. -1 heart.`, type: 'bad' });
     onWrongWordOBO(candidate);
   } else {
-    // Still a valid prefix — continue building
     gameState.building = candidate;
     gameState.log.push({ text: `${currentUser.username} added: ${letter} → ${candidate}`, type: 'info' });
     renderGame();
 
-    // advance turn without resetting building
     gameState.currentIdx = (gameState.currentIdx + 1) % gameState.players.length;
-    // skip eliminated
+    
     let safety = 0;
     while (gameState.players[gameState.currentIdx].eliminated && safety++ < gameState.players.length)
       gameState.currentIdx = (gameState.currentIdx + 1) % gameState.players.length;
@@ -728,16 +658,13 @@ async function submitOneByOneLetter(letter) {
   }
 }
 
-// ── Bot turn (mirrors doBotTurnLL / cpuNextLetter) ─────────────
 function doBotTurn() {
   if (!gameState || !gameState.running) return;
   const bot = gameState.players[gameState.currentIdx];
 
   if (gameState.mode === 'last_letter') {
-    // mirrors doBotTurnLL using cpuPickWord
     const word = botPickWord(gameState.requiredLetter, gameState.usedWords);
     if (!word) {
-      // Bot couldn't find a word — mirrors bot returning false → -1 heart
       gameState.log.push({ text: `${bot.name} [bot] couldn't find a word. -1 heart.`, type: 'bad' });
       bot.hearts--;
       if (bot.hearts <= 0) {
@@ -758,13 +685,11 @@ function doBotTurn() {
     renderGame();
 
   } else {
-    // mirrors cpuNextLetter
     const letter    = botNextLetter(gameState.building);
     const candidate = gameState.building + letter;
     gameState.log.push({ text: `${bot.name} [bot] added: ${letter} → ${candidate}`, type: 'info' });
 
     if (candidate.length >= 3 && validWordLocal(candidate)) {
-      // Bot completed a word
       gameState.building = candidate;
       gameState.log.push({ text: `${bot.name} [bot] completed: "${candidate}"`, type: 'good' });
       renderGame();
@@ -797,7 +722,6 @@ function doBotTurn() {
     renderGame();
   }
 
-  // Next player
   gameState.currentIdx = (gameState.currentIdx + 1) % gameState.players.length;
   let safety = 0;
   while (gameState.players[gameState.currentIdx].eliminated && safety++ < gameState.players.length)
@@ -806,7 +730,6 @@ function doBotTurn() {
   setTimeout(() => advanceToNextPlayer(), 400);
 }
 
-// ── Wrong word: deduct heart, mirror GameEngine logic ────────
 function onWrongWord(msg) {
   const cur = gameState.players[gameState.currentIdx];
   cur.hearts--;
@@ -828,7 +751,6 @@ function onWrongWord(msg) {
   }, 1200);
 }
 
-// One-by-One wrong (prefix dead end)
 function onWrongWordOBO(candidate) {
   const cur = gameState.players[gameState.currentIdx];
   cur.hearts--;
@@ -846,7 +768,6 @@ function onWrongWordOBO(candidate) {
   setTimeout(() => advanceToNextPlayer(), 1200);
 }
 
-// Used only for OBO bot advancing
 function advanceToNextPlayerOBO() {
   gameState.currentIdx = (gameState.currentIdx + 1) % gameState.players.length;
   let s = 0;
@@ -855,7 +776,6 @@ function advanceToNextPlayerOBO() {
   advanceToNextPlayer();
 }
 
-// ── acceptWord — valid word committed to session ──────────────
 function acceptWord(word) {
   const cur = gameState.players[gameState.currentIdx];
   gameState.log.push({ text: `${cur.name}: ${word}`, type: 'good' });
@@ -872,8 +792,6 @@ function acceptWord(word) {
   setTimeout(() => advanceToNextPlayer(), 300);
 }
 
-// ── Check win condition (mirrors GameEngine::activePlayers <= 1) ─
-// mirrors endGame: last alive wins, eliminated get losses
 function checkEndGame() {
   if (!gameState) return false;
   const alive = gameState.players.filter(p => !p.eliminated);
@@ -884,7 +802,6 @@ function checkEndGame() {
 
   const winner = alive[0] || null;
 
-  // Update stats — mirrors endGame: winner.wins++, others.losses++
   gameState.players.forEach(p => {
     if (currentUser && p.name === currentUser.username) {
       if (!p.eliminated) {
@@ -912,9 +829,6 @@ function closeEndOverlay() {
   showScreen('menu');
 }
 
-// ════════════════════════════════════════════════════════════
-//  MULTIPLAYER  (mirrors room.php actions)
-// ════════════════════════════════════════════════════════════
 
 let mpPollTimer = null;
 
@@ -976,7 +890,6 @@ function renderMpGame(room, isYourTurn) {
   const modeLabel = room.mode === 'last_letter' ? 'Last Letter' : 'One-by-One';
   $('mp-round-badge').textContent = 'Round ' + room.round;
 
-  // Word stage
   if (room.mode === 'last_letter') {
     $('mp-word-label').textContent   = 'Last word';
     $('mp-word-value').textContent   = room.last_word || '-';
@@ -988,7 +901,6 @@ function renderMpGame(room, isYourTurn) {
     $('mp-req-wrap').style.display   = 'none';
   }
 
-  // Players
   const curPlayer = room.players[room.current_idx % room.players.length];
   $('mp-game-players').innerHTML = room.players.map(p => {
     const isActive = (p.name === curPlayer.name);
@@ -1000,7 +912,6 @@ function renderMpGame(room, isYourTurn) {
     </div>`;
   }).join('');
 
-  // Turn banner + input
   const notice   = $('mp-turn-notice');
   const inputWrap= $('mp-input-wrap');
   if (room.status === 'finished') {
@@ -1011,7 +922,6 @@ function renderMpGame(room, isYourTurn) {
     inputWrap.style.display = 'none';
     stopMpPoll();
 
-    // Update stats
     room.players.forEach(p => {
       if (currentUser && p.name === currentUser.username) {
         if (!p.eliminated) currentUser.wins = (currentUser.wins||0)+1;
@@ -1041,7 +951,6 @@ function renderMpGame(room, isYourTurn) {
     inputWrap.style.display = 'none';
   }
 
-  // Log
   const logEl = $('mp-game-log');
   logEl.innerHTML = (room.log || []).slice(-12).map(t =>
     `<div class="log-line">${esc(t)}</div>`).join('');
@@ -1094,15 +1003,11 @@ async function leaveRoom() {
   showScreen('menu');
 }
 
-// ════════════════════════════════════════════════════════════
-//  UTILITIES
-// ════════════════════════════════════════════════════════════
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Keyboard: Enter on login
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     const s = document.querySelector('.screen.active');

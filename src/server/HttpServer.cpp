@@ -1,4 +1,4 @@
-// ============================================================
+// 
 //  ThinkFast  |  src/server/HttpServer.cpp
 //
 //  Cross-platform HTTP/1.1 server.
@@ -7,7 +7,7 @@
 //
 //  No external libraries. Pure sockets + threads.
 //  All game logic lives in AuthManager / WordValidator / RoomManager.
-// ============================================================
+// 
 
 #include "HttpServer.h"
 #include <cstring>
@@ -23,7 +23,6 @@ namespace ThinkFast {
 
 static std::mutex authMu;
 
-// ── sendAll: keep sending until entire buffer is flushed ──────
 static void sendAll(sock_t fd, const std::string& data) {
     size_t sent = 0;
     while (sent < data.size()) {
@@ -36,7 +35,6 @@ static void sendAll(sock_t fd, const std::string& data) {
     }
 }
 
-// ── Constructor / Destructor ──────────────────────────────────
 
 HttpServer::HttpServer(int port,
                        AuthManager&   auth,
@@ -56,7 +54,6 @@ HttpServer::~HttpServer() {
 #endif
 }
 
-// ── Main listen loop ──────────────────────────────────────────
 
 void HttpServer::run() {
     sock_t server_fd = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -96,7 +93,6 @@ void HttpServer::run() {
 
 void HttpServer::stop() { running_ = false; }
 
-// ── Per-connection handler ────────────────────────────────────
 
 void HttpServer::handleClient(sock_t fd) {
     char buf[65536];
@@ -153,7 +149,6 @@ void HttpServer::handleClient(sock_t fd) {
     respond(dispatch(path, body));
 }
 
-// ── Route dispatcher ──────────────────────────────────────────
 
 std::string HttpServer::dispatch(const std::string& path, const std::string& body) {
     if (path == "/auth"         || path == "/auth/")         return routeAuth(body);
@@ -163,7 +158,6 @@ std::string HttpServer::dispatch(const std::string& path, const std::string& bod
     return err("Unknown endpoint: " + path);
 }
 
-// ── /auth ─────────────────────────────────────────────────────
 
 std::string HttpServer::routeAuth(const std::string& body) {
     std::string action   = jsonGet(body, "action");
@@ -213,7 +207,6 @@ std::string HttpServer::routeAuth(const std::string& body) {
     return err("Unknown action: " + action);
 }
 
-// ── /validate ─────────────────────────────────────────────────
 
 std::string HttpServer::routeValidate(const std::string& body) {
     std::string word = jsonGet(body, "word");
@@ -224,7 +217,6 @@ std::string HttpServer::routeValidate(const std::string& body) {
               "\"valid\":"   + (valid ? "true" : "false"));
 }
 
-// ── /leaderboard ──────────────────────────────────────────────
 
 std::string HttpServer::routeLeaderboard(const std::string& /*body*/) {
     std::lock_guard<std::mutex> lk(authMu);
@@ -245,7 +237,6 @@ std::string HttpServer::routeLeaderboard(const std::string& /*body*/) {
     return ok("\"players\":" + arr);
 }
 
-// ── /room ─────────────────────────────────────────────────────
 
 std::string HttpServer::routeRoom(const std::string& body) {
     std::string action = jsonGet(body, "action");
@@ -268,7 +259,6 @@ std::string HttpServer::routeRoom(const std::string& body) {
     return err("Unknown room action: " + action);
 }
 
-// ── JSON helpers ──────────────────────────────────────────────
 
 std::string HttpServer::jsonGet(const std::string& json, const std::string& key) {
     std::string needle = "\"" + key + "\"";
@@ -337,4 +327,4 @@ std::string HttpServer::err(const std::string& msg) {
     return "{\"ok\":false,\"error\":\"" + jsonEscape(msg) + "\"}";
 }
 
-} // namespace ThinkFast
+}

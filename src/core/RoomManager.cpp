@@ -1,14 +1,3 @@
-// ============================================================
-//  ThinkFast  |  src/core/RoomManager.cpp
-//
-//  Every game rule lives here. PHP never sees game state.
-//  Rules are identical to GameEngine.cpp:
-//    - 3 hearts per player
-//    - wrong word / timeout / dead prefix → -1 heart → eliminated
-//    - last player alive wins
-//    - WordValidator::isValid() for all human word checks
-//    - WordValidator::cpuPickWord / cpuNextLetter for bots
-// ============================================================
 
 #include "RoomManager.h"
 #include <algorithm>
@@ -19,12 +8,10 @@
 
 namespace ThinkFast {
 
-// ── Constructor ───────────────────────────────────────────────
 
 RoomManager::RoomManager(WordValidator& wv)
     : wv_(wv), rng_(std::random_device{}()) {}
 
-// ── Helpers ───────────────────────────────────────────────────
 
 long long RoomManager::nowSec() {
     return std::chrono::duration_cast<std::chrono::seconds>(
@@ -46,7 +33,6 @@ void RoomManager::advanceTurn(Room& r) {
     }
     r.turn_started = nowSec();
 
-    // If next player is a bot, play its turn immediately
     auto& cur = r.players[r.current_idx];
     if (!cur.is_bot || cur.eliminated) return;
 
@@ -108,7 +94,6 @@ void RoomManager::checkWin(Room& r) {
     if (activePlayers(r) <= 1) r.status = RoomStatus::FINISHED;
 }
 
-// ── JSON helpers ─────────────────────────────────────────────
 
 static std::string jsonEscape(const std::string& s) {
     std::string o;
@@ -136,12 +121,12 @@ std::string RoomManager::err(const std::string& msg) const {
 
 std::string RoomManager::roomToJson(const Room& r,
                                      const std::string& forPlayer) const {
-    // status string
+
     std::string st = (r.status == RoomStatus::WAITING)  ? "waiting"
                    : (r.status == RoomStatus::PLAYING)  ? "playing"
                    :                                       "finished";
 
-    // players array
+
     std::string players = "[";
     for (size_t i = 0; i < r.players.size(); ++i) {
         const auto& p = r.players[i];
@@ -153,7 +138,6 @@ std::string RoomManager::roomToJson(const Room& r,
     }
     players += "]";
 
-    // log array (last 50)
     std::string logArr = "[";
     const int start = std::max(0, static_cast<int>(r.log.size()) - 50);
     for (int i = start; i < static_cast<int>(r.log.size()); ++i) {
@@ -162,7 +146,6 @@ std::string RoomManager::roomToJson(const Room& r,
     }
     logArr += "]";
 
-    // used_words array
     std::string used = "[";
     bool first = true;
     for (const auto& w : r.used_words) {
@@ -172,7 +155,6 @@ std::string RoomManager::roomToJson(const Room& r,
     }
     used += "]";
 
-    // is_your_turn
     bool iyt = (r.status == RoomStatus::PLAYING) &&
                !r.players.empty() &&
                (r.players[r.current_idx % r.players.size()].name == forPlayer);
@@ -200,7 +182,6 @@ std::string RoomManager::roomToJson(const Room& r,
     return json;
 }
 
-// ── Code generator ────────────────────────────────────────────
 
 std::string RoomManager::generateCode() const {
     static const char CHARS[] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -210,7 +191,6 @@ std::string RoomManager::generateCode() const {
     return code;
 }
 
-// ── CREATE ────────────────────────────────────────────────────
 
 std::string RoomManager::create(const std::string& player,
                                  const std::string& modeStr,
@@ -239,7 +219,6 @@ std::string RoomManager::create(const std::string& player,
               ",\"code\":\"" + code + "\"");
 }
 
-// ── JOIN ──────────────────────────────────────────────────────
 
 std::string RoomManager::join(const std::string& player,
                                const std::string& code) {
@@ -250,7 +229,6 @@ std::string RoomManager::join(const std::string& player,
     Room& r = it->second;
     if (r.status != RoomStatus::WAITING) return err("Game already started.");
 
-    // Already in?
     for (auto& p : r.players)
         if (p.name == player) { p.last_seen = nowSec(); return ok(roomToJson(r, player)); }
 
@@ -265,7 +243,6 @@ std::string RoomManager::join(const std::string& player,
     return ok(roomToJson(r, player));
 }
 
-// ── STATE (poll) ──────────────────────────────────────────────
 
 std::string RoomManager::state(const std::string& player,
                                 const std::string& code) {
@@ -275,11 +252,9 @@ std::string RoomManager::state(const std::string& player,
     if (it == rooms_.end()) return err("Room not found.");
     Room& r = it->second;
 
-    // Refresh last_seen
     for (auto& p : r.players)
         if (p.name == player) { p.last_seen = nowSec(); break; }
 
-    // Auto-kick disconnected players (15s without a poll)
     if (r.status == RoomStatus::PLAYING) {
         const long long now = nowSec();
         for (auto& p : r.players) {
@@ -295,7 +270,6 @@ std::string RoomManager::state(const std::string& player,
     return ok(roomToJson(r, player));
 }
 
-// ── START ─────────────────────────────────────────────────────
 
 std::string RoomManager::start(const std::string& player,
                                 const std::string& code) {
@@ -323,7 +297,6 @@ std::string RoomManager::start(const std::string& player,
         r.log.push_back("Game started. One-by-One mode.");
     }
 
-    // If first player is a bot, advance immediately
     if (!r.players.empty() && r.players[0].is_bot) {
         advanceTurn(r);
     }
@@ -331,7 +304,6 @@ std::string RoomManager::start(const std::string& player,
     return ok(roomToJson(r, player));
 }
 
-// ── MOVE ──────────────────────────────────────────────────────
 
 std::string RoomManager::move(const std::string& player,
                                const std::string& code,
@@ -343,21 +315,18 @@ std::string RoomManager::move(const std::string& player,
     Room& r = it->second;
     if (r.status != RoomStatus::PLAYING)   return err("Game is not in progress.");
 
-    // Validate it's this player's turn
     const int n = static_cast<int>(r.players.size());
     if (n == 0) return err("No players.");
     auto& cur = r.players[r.current_idx % n];
     if (cur.name != player)                return err("Not your turn.");
     if (cur.eliminated)                    return err("You are eliminated.");
 
-    // Sanitise value
     std::string val = value;
     std::transform(val.begin(), val.end(), val.begin(), ::tolower);
     for (char c : val) if (!std::isalpha(static_cast<unsigned char>(c))) return err("Letters only.");
     if (val.empty()) return err("No value provided.");
 
     if (r.mode == GameMode::LAST_LETTER) {
-        // ── Last Letter rules (mirrors GameEngine::doHumanTurnLL) ──
 
         if (val[0] != r.required_letter)
             return err(std::string("Word must start with '") +
@@ -367,7 +336,6 @@ std::string RoomManager::move(const std::string& player,
         if (r.used_words.count(val))
             return err("\"" + val + "\" was already used.");
 
-        // WordValidator::isValid — local dict first, then real dictionary API
         if (!wv_.isValid(val))
             return err("\"" + val + "\" is not a recognised English word.");
 
@@ -381,8 +349,7 @@ std::string RoomManager::move(const std::string& player,
         if (r.status == RoomStatus::PLAYING) advanceTurn(r);
 
     } else {
-        // ── One-by-One rules (mirrors GameEngine::runOneByOne) ──
-
+        
         if (val.size() != 1)
             return err("Submit exactly one letter.");
 
@@ -390,7 +357,6 @@ std::string RoomManager::move(const std::string& player,
         r.log.push_back(player + " adds: " + val + " -> " + candidate);
 
         if (candidate.size() >= 3 && wv_.isValid(candidate)) {
-            // Player completed a valid word — everyone else -1 heart
             r.building = candidate;
             r.log.push_back(player + " completed: \"" + candidate + "\"");
             for (auto& p : r.players) {
@@ -410,7 +376,6 @@ std::string RoomManager::move(const std::string& player,
             if (r.status == RoomStatus::PLAYING) advanceTurn(r);
 
         } else if (!wv_.isValidPrefix(candidate)) {
-            // Dead end — current player -1 heart
             cur.hearts--;
             r.log.push_back(player + ": \"" + candidate + "\" has no valid continuation. -1 heart.");
             if (cur.hearts <= 0) {
@@ -423,7 +388,6 @@ std::string RoomManager::move(const std::string& player,
             if (r.status == RoomStatus::PLAYING) advanceTurn(r);
 
         } else {
-            // Still a valid prefix — keep building
             r.building    = candidate;
             r.turn_started = nowSec();
             checkWin(r);
@@ -434,7 +398,6 @@ std::string RoomManager::move(const std::string& player,
     return ok(roomToJson(r, player));
 }
 
-// ── LEAVE ─────────────────────────────────────────────────────
 
 std::string RoomManager::leave(const std::string& player,
                                 const std::string& code) {
@@ -457,4 +420,4 @@ std::string RoomManager::leave(const std::string& player,
     return ok();
 }
 
-} // namespace ThinkFast
+} 

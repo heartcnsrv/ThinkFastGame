@@ -1,7 +1,4 @@
 #pragma once
-// ============================================================
-//  ThinkFast  |  src/core/GameEngine.h
-// ============================================================
 
 #include "GameTypes.h"
 #include "WordValidator.h"
@@ -33,4 +30,4 @@ private:
     std::string timedInput(int seconds);
 };
 
-} // namespace ThinkFast
+}

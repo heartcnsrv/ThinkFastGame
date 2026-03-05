@@ -1,4 +1,4 @@
-// ============================================================
+//
 //  ThinkFast  |  server_main.cpp
 //
 //  C++ HTTP backend — compile on Windows with MinGW:
@@ -15,7 +15,7 @@
 //      -lws2_32
 //
 //  Then run:  ThinkFastServer.exe
-// ============================================================
+// 
 
 #include "src/core/AuthManager.h"
 #include "src/core/WordValidator.h"
@@ -25,10 +25,10 @@
 #include <fstream>
 #include <csignal>
 #include <cstdlib>
-#include <sys/stat.h>   // stat(), mkdir() — available on both Windows and Linux
+#include <sys/stat.h> 
 
 #ifdef _WIN32
-  #include <direct.h>   // _mkdir on Windows
+  #include <direct.h> 
   #define MAKE_DIR(p) _mkdir(p)
 #else
   #include <unistd.h>
@@ -57,7 +57,6 @@ int main(int argc, char* argv[]) {
         try { port = std::stoi(argv[1]); } catch (...) {}
     }
 
-    // ── Ensure data/ directory and users.csv exist ─────────────
     MAKE_DIR("data");
 
     const std::string usersPath = "data/users.csv";

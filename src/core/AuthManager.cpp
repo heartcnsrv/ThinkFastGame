@@ -1,7 +1,3 @@
-// ============================================================
-//  ThinkFast  |  src/core/AuthManager.cpp
-// ============================================================
-
 #include "AuthManager.h"
 #include <algorithm>
 #include <ctime>
@@ -92,7 +88,6 @@ void AuthManager::reload() {
     records_ = CSVManager::loadUsers(usersPath_);
 }
 
-// ── Private helpers ───────────────────────────────────────────
 
 void AuthManager::fillPlayer(const CSVManager::UserRecord& rec) {
     current_             = Player{};
@@ -113,4 +108,4 @@ std::string AuthManager::todayString() {
     return buf;
 }
 
-} // namespace ThinkFast
+}

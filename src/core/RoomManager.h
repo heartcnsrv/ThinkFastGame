@@ -1,7 +1,4 @@
 #pragma once
-// ============================================================
-//  ThinkFast  |  src/core/RoomManager.h
-// ============================================================
 
 #include "GameTypes.h"
 #include "WordValidator.h"
@@ -74,4 +71,4 @@ private:
     static long long nowSec();
 };
 
-} // namespace ThinkFast
+} 

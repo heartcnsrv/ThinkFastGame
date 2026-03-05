@@ -1,7 +1,3 @@
-// ============================================================
-//  ThinkFast  |  src/utils/CSVManager.cpp
-// ============================================================
-
 #include "CSVManager.h"
 #include <fstream>
 #include <sstream>
@@ -78,7 +74,6 @@ CSVManager::loadWords(const std::string& filepath) {
     return words;
 }
 
-// ── Private helpers ───────────────────────────────────────────
 
 std::vector<std::string> CSVManager::parseLine(const std::string& line) {
     std::vector<std::string> fields;
@@ -117,4 +112,4 @@ int CSVManager::safeInt(const std::string& s) {
     catch (...) { return 0; }
 }
 
-} // namespace ThinkFast
+}

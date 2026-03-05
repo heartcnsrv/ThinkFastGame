@@ -1,8 +1,4 @@
 #pragma once
-// ============================================================
-//  ThinkFast  |  src/ui/ConsoleUI.h
-// ============================================================
-
 #include <string>
 #include <vector>
 
@@ -63,4 +59,4 @@ public:
                     const char* labelCol = Color::BLUE);
 };
 
-} // namespace ThinkFast
+}

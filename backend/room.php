@@ -1,22 +1,4 @@
 <?php
-// ============================================================
-//  ThinkFast  |  backend/room.php
-//  Multiplayer room management using WAMP / Apache + PHP
-//
-//  The frontend polls this endpoint every second.
-//  No WebSocket server needed - uses file-based state in data/rooms/
-//
-//  POST /backend/room.php
-//  Body: { "action": "...", ... }
-//
-//  Actions:
-//    create  - create a new room
-//    join    - join an existing room by code
-//    state   - get the current room state (polling)
-//    move    - submit a word or letter
-//    leave   - leave / forfeit
-//    kick    - host can kick stale players
-// ============================================================
 
 require_once __DIR__ . '/config.php';
 
@@ -31,13 +13,11 @@ if (!$player && $action !== 'create') {
 
 switch ($action) {
 
-    // ── Create room ──────────────────────────────────────────
     case 'create': {
-        $mode      = $body['mode']      ?? 'last_letter'; // last_letter | one_by_one
+        $mode      = $body['mode']      ?? 'last_letter';
         $timeLimit = (int)($body['time_limit'] ?? 15);
         $maxPlayers= (int)($body['max_players'] ?? 4);
 
-        // Generate unique code
         do {
             $code = generateRoomCode();
         } while (file_exists(roomPath($code)));
@@ -47,7 +27,7 @@ switch ($action) {
             'mode'        => $mode,
             'time_limit'  => $timeLimit,
             'max_players' => $maxPlayers,
-            'status'      => 'waiting',   // waiting | playing | finished
+            'status'      => 'waiting',  
             'host'        => $player,
             'players'     => [
                 ['name' => $player, 'hearts' => 3, 'eliminated' => false, 'last_seen' => time()],
@@ -66,14 +46,12 @@ switch ($action) {
         jsonOk(['code' => $code, 'room' => $room]);
     }
 
-    // ── Join room ────────────────────────────────────────────
     case 'join': {
         $room = loadRoom($code);
         if (!$room)                         jsonErr('Room not found.', 404);
         if ($room['status'] !== 'waiting')  jsonErr('Game already started.');
         if (count($room['players']) >= $room['max_players']) jsonErr('Room is full.');
 
-        // Check if already in room
         foreach ($room['players'] as $p) {
             if ($p['name'] === $player) {
                 jsonOk(['code' => $code, 'room' => $room]);
@@ -90,12 +68,10 @@ switch ($action) {
         jsonOk(['code' => $code, 'room' => $room]);
     }
 
-    // ── Get state ────────────────────────────────────────────
     case 'state': {
         $room = loadRoom($code);
         if (!$room) jsonErr('Room not found.', 404);
 
-        // Update last_seen for this player
         foreach ($room['players'] as &$p) {
             if ($p['name'] === $player) {
                 $p['last_seen'] = time();
@@ -103,7 +79,6 @@ switch ($action) {
         }
         unset($p);
 
-        // Auto-kick players who haven't polled in 15s (disconnected)
         if ($room['status'] === 'playing') {
             foreach ($room['players'] as &$p) {
                 if (!$p['eliminated'] && (time() - $p['last_seen']) > 15) {
@@ -113,7 +88,6 @@ switch ($action) {
                 }
             }
             unset($p);
-            // Check win condition
             $active = array_filter($room['players'], fn($p) => !$p['eliminated']);
             if (count($active) <= 1) {
                 $room['status'] = 'finished';
@@ -124,7 +98,6 @@ switch ($action) {
         jsonOk(['room' => $room, 'is_your_turn' => isYourTurn($room, $player)]);
     }
 
-    // ── Start game (host only) ────────────────────────────────
     case 'start': {
         $room = loadRoom($code);
         if (!$room)                        jsonErr('Room not found.', 404);
@@ -137,7 +110,6 @@ switch ($action) {
         $room['turn_started'] = time();
 
         if ($room['mode'] === 'last_letter') {
-            // Pick a starter word from a small built-in list
             $starters = ['apple','bread','crane','drift','eagle','flame','grant',
                          'hotel','index','jewel','knife','lemon','maple','novel',
                          'ocean','piano','quest','radio','stone','tiger','ultra',
@@ -156,7 +128,6 @@ switch ($action) {
         jsonOk(['room' => $room]);
     }
 
-    // ── Submit move ──────────────────────────────────────────
     case 'move': {
         $room = loadRoom($code);
         if (!$room)                        jsonErr('Room not found.', 404);
@@ -169,7 +140,6 @@ switch ($action) {
         $log = $room['log'];
 
         if ($room['mode'] === 'last_letter') {
-            // Validate: must start with required letter, be alphabetic, not reused
             $req = $room['required_letter'];
             if ($value[0] !== $req) {
                 jsonErr("Word must start with '" . strtoupper($req) . "'.");
@@ -180,7 +150,6 @@ switch ($action) {
             if (in_array($value, $room['used_words'])) {
                 jsonErr('Word already used.');
             }
-            // Validate via dictionary API (server-side)
             $valid = serverValidateWord($value);
             if (!$valid) {
                 jsonErr('"' . $value . '" is not a recognised English word.');
@@ -193,16 +162,13 @@ switch ($action) {
             advanceTurn($room);
 
         } else {
-            // One-by-One: value must be a single letter
             if (strlen($value) !== 1 || !ctype_alpha($value)) {
                 jsonErr('Submit exactly one letter.');
             }
             $candidate = $room['building'] . $value;
-            // Check if it forms a complete word (min 3 letters)
             if (strlen($candidate) >= 3 && serverValidateWord($candidate)) {
                 $room['building'] = $candidate;
                 $log[] = $player . ' completed the word: ' . $candidate;
-                // Eliminate everyone except the completer
                 foreach ($room['players'] as &$p) {
                     if ($p['name'] !== $player && !$p['eliminated']) {
                         $p['hearts']--;
@@ -223,7 +189,6 @@ switch ($action) {
                     advanceTurn($room);
                 }
             } elseif (!isValidPrefix($candidate)) {
-                // No English word starts with this - penalise
                 $log[] = $player . " added '$value' -> '$candidate' (no valid word). -1 heart.";
                 foreach ($room['players'] as &$p) {
                     if ($p['name'] === $player) {
@@ -244,9 +209,8 @@ switch ($action) {
             }
         }
 
-        $room['log']         = array_slice($log, -50); // keep last 50 log entries
+        $room['log']         = array_slice($log, -50);
         $room['turn_started']= time();
-        // Final win check
         $active = array_filter($room['players'], fn($p) => !$p['eliminated']);
         if (count($active) <= 1) $room['status'] = 'finished';
 
@@ -254,7 +218,6 @@ switch ($action) {
         jsonOk(['room' => $room, 'is_your_turn' => isYourTurn($room, $player)]);
     }
 
-    // ── Leave / forfeit ──────────────────────────────────────
     case 'leave': {
         $room = loadRoom($code);
         if (!$room) jsonOk(['message' => 'Room not found.']);
@@ -278,7 +241,6 @@ switch ($action) {
         jsonErr('Unknown action.', 400);
 }
 
-// ── Helpers ───────────────────────────────────────────────────
 
 function isYourTurn(array $room, string $player): bool {
     if ($room['status'] !== 'playing') return false;
@@ -295,11 +257,9 @@ function advanceTurn(array &$room): void {
     }
 }
 
-// Server-side word validation using a small built-in set + optional dictionary API
 function serverValidateWord(string $word): bool {
     static $dict = null;
     if ($dict === null) {
-        // Minimal built-in word list for server-side validation
         $core = 'able,about,above,acid,acre,across,act,add,admit,adult,after,again,age,
                  ago,agree,ahead,aim,air,alarm,alive,all,allow,alone,along,also,alter,
                  amid,angel,anger,angle,animal,answer,ant,any,ape,apple,apply,area,argue,
@@ -394,12 +354,8 @@ function serverValidateWord(string $word): bool {
     return isset($dict[$word]);
 }
 
-// Very small prefix check for one-by-one mode
 function isValidPrefix(string $prefix): bool {
-    if (strlen($prefix) <= 1) return true; // all single letters valid as prefix
-    // Just allow anything 3 letters or fewer as a prefix to avoid false negatives
+    if (strlen($prefix) <= 1) return true;
     if (strlen($prefix) <= 2) return true;
-    // Re-use serverValidateWord checking if any word starts with this prefix
-    // For simplicity: if the prefix itself is a known word or is short, allow it
     return strlen($prefix) < 6 || serverValidateWord($prefix);
 }

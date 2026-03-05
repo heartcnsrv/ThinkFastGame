@@ -1,7 +1,3 @@
-// ============================================================
-//  ThinkFast  |  src/utils/BotNames.cpp
-// ============================================================
-
 #include "BotNames.h"
 #include <vector>
 #include <random>
@@ -31,4 +27,4 @@ std::string BotNames::random() {
     return ADJ[da(rng)] + NOUN[dn(rng)] + std::to_string(dd(rng));
 }
 
-} // namespace ThinkFast
+}

@@ -1,8 +1,8 @@
 #pragma once
-// ============================================================
+// 
 //  ThinkFast  |  src/server/HttpServer.h
 //  Windows (Winsock2) + Linux (POSIX) compatible HTTP server
-// ============================================================
+//
 
 #include "../core/AuthManager.h"
 #include "../core/WordValidator.h"
@@ -12,7 +12,6 @@
 #include <atomic>
 #include <mutex>
 
-// ── Platform socket types ─────────────────────────────────────
 #ifdef _WIN32
   #include <winsock2.h>
   #include <ws2tcpip.h>
@@ -65,4 +64,4 @@ private:
     static std::string err(const std::string& msg);
 };
 
-} // namespace ThinkFast
+}

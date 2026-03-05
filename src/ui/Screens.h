@@ -1,7 +1,4 @@
 #pragma once
-// ============================================================
-//  ThinkFast  |  src/ui/Screens.h
-// ============================================================
 
 #include "../core/AuthManager.h"
 #include "../core/GameEngine.h"
@@ -28,4 +25,4 @@ private:
     void doGuest();
 };
 
-} // namespace ThinkFast
+} 

@@ -1,7 +1,6 @@
 CXX      = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 
-# Sources shared by BOTH binaries (no ConsoleUI, no GameEngine)
 SHARED_CORE = \
     src/core/GameTypes.cpp      \
     src/core/WordValidator.cpp  \
@@ -9,7 +8,6 @@ SHARED_CORE = \
     src/utils/CSVManager.cpp    \
     src/utils/BotNames.cpp
 
-# Console game: needs GameEngine + ConsoleUI + Screens
 CONSOLE_SRCS = \
     main.cpp                    \
     src/core/GameEngine.cpp     \
@@ -17,7 +15,6 @@ CONSOLE_SRCS = \
     src/ui/Screens.cpp          \
     $(SHARED_CORE)
 
-# HTTP server: needs RoomManager + HttpServer (no ConsoleUI, no GameEngine)
 SERVER_SRCS = \
     server_main.cpp             \
     src/core/RoomManager.cpp    \

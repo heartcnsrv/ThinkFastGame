@@ -1,35 +1,5 @@
 # ThinkFast — WAMP Setup Guide
 
-## Why the "Unexpected token '<'" error happens
-
-When the JS calls `/backend/auth.php` and Apache cannot find the file,
-it returns an HTML 404 page.  The JS then tries to `JSON.parse()` that
-HTML and immediately crashes with:
-
-    Network error: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
-
-The fix is making sure the `DocumentRoot` points to the **project root**
-`ThinkFast3\`, not `ThinkFast3\src\gui\`.  Both the GUI and the backend
-must be accessible under the same hostname.
-
----
-
-## Correct folder structure inside WAMP
-
-```
-C:\wamp64\www\
-└── ThinkFast3\          <-- DocumentRoot for "thinkfast"
-    ├── backend\         <-- /backend/auth.php, room.php, etc.
-    ├── data\            <-- users.csv, rooms\  (writable by Apache)
-    ├── src\
-    │   └── gui\         <-- /src/gui/index.html
-    └── thinkfast-vhost.conf
-```
-
----
-
-## Step-by-step setup
-
 ### 1. Copy project files
 
 Copy the entire `ThinkFast3` folder into:
@@ -113,26 +83,3 @@ Or just:  http://thinkfast/   (auto-redirects to /src/gui/)
 4. Host creates a room → shares the 6-character code → others join.
 
 ---
-
-## Troubleshooting
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| `Unexpected token '<'` | Wrong DocumentRoot | Set DocumentRoot to `ThinkFast3\`, not `ThinkFast3\src\gui\` |
-| `{"ok":false,"error":"..."}` shown | PHP working, logic error | Check the error message — usually missing field |
-| Blank page or 403 | Directory permissions | Add `Require all granted` to Directory block |
-| http://localhost broken | Missing localhost VirtualHost | Add the localhost `<VirtualHost>` block shown in the conf file |
-| PHP not parsed (shown as text) | PHP handler not active | WAMP tray → PHP → enable the PHP version |
-| Can't write users.csv | File permissions | Give `IUSR` or `Everyone` Modify on the `data\` folder |
-
----
-
-## Quick file path reference
-
-| What | Windows path |
-|---|---|
-| VirtualHost config | `C:\wamp64\bin\apache\apache2.4.XX\conf\extra\httpd-vhosts.conf` |
-| httpd.conf | `C:\wamp64\bin\apache\apache2.4.XX\conf\httpd.conf` |
-| hosts file | `C:\Windows\System32\drivers\etc\hosts` |
-| WAMP error log | `C:\wamp64\logs\` |
-| Apache error log for this site | `C:\wamp64\logs\thinkfast-error.log` |
