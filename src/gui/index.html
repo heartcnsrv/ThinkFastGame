@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ThinkFast — Word Chain Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="toast-area"></div>
+
+<div id="end-overlay">
+  <div class="end-card">
+    <div class="end-result" id="end-result">--</div>
+    <div class="end-detail" id="end-detail"></div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-secondary" onclick="closeEndOverlay()">Menu</button>
+      <button class="btn btn-teal" onclick="closeEndOverlay();goToLobby();">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+
+  <div class="header">
+    <div class="logo-badge">TF</div>
+    <div>
+      <div class="logo-text">ThinkFast</div>
+      <div class="logo-tagline">Every last letter counts</div>
+    </div>
+    <div class="header-right">
+      <span class="user-pill" id="header-user" style="display:none"></span>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()" id="logout-btn" style="display:none">Log out</button>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="screen-login" class="screen active">
+    <div class="login-hero">
+      <div class="login-hero-title">Think<br><span class="hl">Fast.</span></div>
+      <div class="login-hero-sub">A word chain game where every last letter matters. Chain words, outlast opponents.</div>
+    </div>
+    <div class="login-card-wrap">
+      <div class="card">
+        <div class="tabs">
+          <button class="tab active" data-tab="login"    onclick="switchLoginTab('login')">Login</button>
+          <button class="tab"        data-tab="register" onclick="switchLoginTab('register')">Register</button>
+          <button class="tab"        data-tab="guest"    onclick="switchLoginTab('guest')">Guest</button>
+        </div>
+        <div id="form-login">
+          <div id="login-alert" class="alert alert-error" style="display:none"></div>
+          <div class="form-group"><label>Username</label><input id="login-user" type="text" placeholder="your username" autocomplete="off"></div>
+          <div class="form-group"><label>Password</label><input id="login-pass" type="password" placeholder="password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+          <button class="btn btn-primary btn-full mt8" onclick="doLogin()">Sign In</button>
+          <div class="tmuted tsm tcenter mt8">Try: heart / 123 &nbsp;·&nbsp; angel / 123</div>
+        </div>
+        <div id="form-register" style="display:none">
+          <div id="reg-alert" class="alert alert-error" style="display:none"></div>
+          <div class="form-group"><label>Username</label><input id="reg-user" type="text" placeholder="pick a username" autocomplete="off"></div>
+          <div class="form-group"><label>Password</label><input id="reg-pass" type="password" placeholder="at least 3 characters"></div>
+          <div class="form-group"><label>Confirm password</label><input id="reg-pass2" type="password" placeholder="repeat your password" onkeydown="if(event.key==='Enter')doRegister()"></div>
+          <button class="btn btn-primary btn-full mt8" onclick="doRegister()">Create Account</button>
+        </div>
+        <div id="form-guest" style="display:none">
+          <div class="alert alert-warn">Guest stats are not saved or shown on the leaderboard.</div>
+          <div class="form-group"><label>Your name</label><input id="guest-name" type="text" placeholder="enter a display name" onkeydown="if(event.key==='Enter')doGuest()"></div>
+          <button class="btn btn-secondary btn-full mt8" onclick="doGuest()">Play as Guest</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div id="screen-menu" class="screen">
+    <div class="menu-greeting" id="menu-greeting">Welcome back.</div>
+    <div class="tmuted tsm" id="menu-stats" style="margin-bottom:0"></div>
+    <div class="menu-grid">
+      <div class="menu-card amber" onclick="goToLobby()">
+        <div class="menu-card-icon">&#9650;</div>
+        <div class="menu-card-title">Play vs Bots</div>
+        <div class="menu-card-sub">Practice Last Letter or One-by-One mode against AI opponents with random names.</div>
+        <div class="menu-card-cta">Play now</div>
+      </div>
+      <div class="menu-card teal" onclick="goToMultiplayer()">
+        <div class="menu-card-icon">&#9632;</div>
+        <div class="menu-card-title">Multiplayer</div>
+        <div class="menu-card-sub">Create a room, share the code, and play with real players over the network.</div>
+        <div class="menu-card-cta">Find a game</div>
+      </div>
+      <div class="menu-card sky" onclick="goToLeaderboard()">
+        <div class="menu-card-icon">&#9733;</div>
+        <div class="menu-card-title">Leaderboard</div>
+        <div class="menu-card-sub">Top players ranked by wins across all games played.</div>
+        <div class="menu-card-cta">View rankings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="screen-lobby" class="screen">
+    <div class="row mb16">
+      <button class="btn btn-ghost btn-sm" onclick="showScreen('menu')">&#8592; Back</button>
+      <div class="page-title" style="margin:0">Set up game</div>
+    </div>
+    <div class="card" style="max-width:560px">
+      <div class="eyebrow">Game Mode</div>
+      <div class="mode-grid">
+        <div class="mode-tile selected" data-mode="last_letter" onclick="selectMode('last_letter')">
+          <div class="mode-tile-title">Last Letter</div>
+          <div class="mode-tile-sub">Start your word with the last letter of the previous word.</div>
+        </div>
+        <div class="mode-tile" data-mode="one_by_one" onclick="selectMode('one_by_one')">
+          <div class="mode-tile-title">One-by-One</div>
+          <div class="mode-tile-sub">Take turns adding one letter at a time to build a word.</div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="option-row">
+        <span class="option-label">Opponents</span>
+        <select id="bot-count"><option value="1">1 bot</option><option value="2">2 bots</option><option value="3">3 bots</option></select>
+      </div>
+      <div class="option-row" id="time-option">
+        <span class="option-label">Time per turn</span>
+        <select id="time-limit">
+          <option value="10">10 seconds</option>
+          <option value="15" selected>15 seconds</option>
+          <option value="20">20 seconds</option>
+          <option value="30">30 seconds</option>
+        </select>
+      </div>
+      <hr class="divider">
+      <button class="btn btn-amber btn-full" onclick="startLocalGame()">Start Game</button>
+    </div>
+  </div>
+
+  <!-- GAME (bots) -->
+  <div id="screen-game" class="screen">
+    <div class="game-header">
+      <button class="btn btn-ghost btn-sm" onclick="stopTimer();showScreen('menu');gameState=null;">Leave</button>
+      <div class="game-title" id="game-mode-label">Last Letter</div>
+      <span class="round-badge" id="game-round-badge">Round 1</span>
+    </div>
+    <div class="game-layout">
+      <div>
+        <div class="eyebrow">Players</div>
+        <div id="game-players"></div>
+      </div>
+      <div class="game-arena">
+        <div class="word-stage">
+          <div class="word-stage-label" id="word-label">Last word</div>
+          <div class="word-stage-value" id="word-value">-</div>
+        </div>
+        <div class="req-badge" id="req-letter-wrap" style="display:none">
+          Your word must start with <strong id="required-letter-display">?</strong>
+        </div>
+        <div class="turn-banner" id="turn-notice">Waiting...</div>
+        <div class="timer-track"><div class="timer-fill" id="timer-bar" style="width:100%"></div></div>
+        <div class="input-row" id="word-input-wrap">
+          <input id="word-input" type="text" placeholder="Type your word..."
+                 onkeydown="if(event.key==='Enter')submitWord()"
+                 autocomplete="off" autocorrect="off" spellcheck="false">
+          <button class="btn btn-teal" onclick="submitWord()">Submit</button>
+        </div>
+        <div class="eyebrow mt4">Game log</div>
+        <div class="game-log" id="game-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MULTIPLAYER SETUP -->
+  <div id="screen-multiplayer" class="screen">
+    <div class="row mb16">
+      <button class="btn btn-ghost btn-sm" onclick="showScreen('menu')">&#8592; Back</button>
+      <div class="page-title" style="margin:0">Multiplayer</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:700px">
+      <div class="card">
+        <div class="eyebrow">Host a room</div>
+        <div class="form-group"><label>Mode</label><select id="mp-mode"><option value="last_letter">Last Letter</option><option value="one_by_one">One-by-One</option></select></div>
+        <div class="form-group"><label>Time per turn</label><select id="mp-time"><option value="10">10 seconds</option><option value="15" selected>15 seconds</option><option value="20">20 seconds</option></select></div>
+        <div class="form-group"><label>Max players</label><select id="mp-maxp"><option value="2">2 players</option><option value="3">3 players</option><option value="4" selected>4 players</option></select></div>
+        <button class="btn btn-teal btn-full" onclick="createRoom()">Create Room</button>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Join a room</div>
+        <div id="join-alert" class="alert alert-error" style="display:none"></div>
+        <div class="form-group">
+          <label>Room code</label>
+          <input id="join-code" type="text" placeholder="XXXXXX" maxlength="6" autocomplete="off"
+                 style="text-transform:uppercase;letter-spacing:.15em;font-family:'DM Mono',monospace;font-size:1.1rem"
+                 onkeydown="if(event.key==='Enter')joinRoom()">
+        </div>
+        <button class="btn btn-secondary btn-full" onclick="joinRoom()">Join Room</button>
+        <div class="tmuted tsm mt12" style="line-height:1.5">Requires WAMP/XAMPP. See README.md for setup.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MULTIPLAYER LOBBY -->
+  <div id="screen-mp-lobby" class="screen">
+    <div class="row mb16">
+      <button class="btn btn-ghost btn-sm" onclick="leaveRoom()">&#8592; Leave</button>
+      <div class="page-title" style="margin:0">Room lobby</div>
+    </div>
+    <div style="max-width:420px">
+      <div class="eyebrow">Room code — share with friends</div>
+      <div class="room-code-box" id="room-code-display">------</div>
+      <div class="alert alert-info mb16">Mode: <strong id="mp-lobby-mode">Last Letter</strong> &nbsp;·&nbsp; Waiting for host to start.</div>
+      <div class="eyebrow">Players in room</div>
+      <ul class="waiting-list" id="waiting-list"></ul>
+      <button class="btn btn-teal btn-full" id="start-room-btn" onclick="startRoom()" style="display:none">Start Game</button>
+    </div>
+  </div>
+
+  <!-- MULTIPLAYER GAME -->
+  <div id="screen-mp-game" class="screen">
+    <div class="game-header">
+      <button class="btn btn-ghost btn-sm" onclick="leaveRoom()">Leave</button>
+      <div class="game-title">Multiplayer</div>
+      <span class="round-badge" id="mp-round-badge">Round 1</span>
+    </div>
+    <div class="game-layout">
+      <div>
+        <div class="eyebrow">Players</div>
+        <div id="mp-game-players"></div>
+      </div>
+      <div class="game-arena">
+        <div class="word-stage">
+          <div class="word-stage-label" id="mp-word-label">Last word</div>
+          <div class="word-stage-value" id="mp-word-value">-</div>
+        </div>
+        <div class="req-badge" id="mp-req-wrap" style="display:none">
+          Must start with <strong id="mp-req-letter">?</strong>
+        </div>
+        <div class="turn-banner" id="mp-turn-notice">Waiting...</div>
+        <div class="input-row" id="mp-input-wrap" style="display:none">
+          <input id="mp-word-input" type="text" placeholder="Type your word or letter..."
+                 onkeydown="if(event.key==='Enter')submitMpMove()"
+                 autocomplete="off" autocorrect="off" spellcheck="false">
+          <button class="btn btn-teal" onclick="submitMpMove()">Submit</button>
+        </div>
+        <div class="eyebrow mt4">Game log</div>
+        <div class="game-log" id="mp-game-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="screen-leaderboard" class="screen">
+    <div class="row mb16">
+      <button class="btn btn-ghost btn-sm" onclick="showScreen('menu')">&#8592; Back</button>
+      <div class="page-title" style="margin:0">Leaderboard</div>
+    </div>
+    <div class="card" style="max-width:640px">
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th style="width:48px">#</th>
+            <th>Player</th>
+            <th>Wins</th>
+            <th>Losses</th>
+            <th>Games</th>
+          </tr>
+        </thead>
+        <tbody id="lb-body">
+          <tr><td colspan="5" class="tmuted" style="padding:16px">Loading rankings...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/game.js"></script>
+<script>
+  const menuEl = document.getElementById('screen-menu');
+  new MutationObserver(() => {
+    if (menuEl.classList.contains('active') && currentUser) {
+      document.getElementById('menu-greeting').textContent =
+        'Welcome' + (currentUser.guest ? '' : ' back') + ', ' + currentUser.username + '.';
+      document.getElementById('menu-stats').textContent = currentUser.guest
+        ? 'Playing as guest — stats will not be saved.'
+        : 'Wins: ' + (currentUser.wins||0) + '  /  Losses: ' + (currentUser.losses||0) + '  /  Games played: ' + (currentUser.games_played||0);
+      document.getElementById('logout-btn').style.display = 'inline-flex';
+      document.getElementById('header-user').style.display = 'inline';
+      document.getElementById('header-user').textContent = currentUser.username + (currentUser.guest ? ' (guest)' : '');
+    }
+  }).observe(menuEl, { attributes: true });
+</script>
+</body>
+</html>
