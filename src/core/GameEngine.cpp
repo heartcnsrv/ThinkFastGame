@@ -5,8 +5,13 @@
 #include <cctype>
 #include <thread>
 #include <chrono>
+#ifdef _WIN32
+#include <conio.h>
+#include <windows.h>
+#else
 #include <termios.h>
 #include <unistd.h>
+#endif
 
 namespace ThinkFast {
 
@@ -290,38 +295,59 @@ char GameEngine::getHumanLetter(Player& player) {
 
 
 std::string GameEngine::timedInput(int seconds) {
-    struct termios oldt{}, newt{};
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag     &= ~static_cast<tcflag_t>(ICANON);
-    newt.c_cc[VMIN]   = 0;
-    newt.c_cc[VTIME]  = 1;  
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
 
     std::string result;
-    const auto deadline = std::chrono::steady_clock::now() +
-                          std::chrono::seconds(seconds);
+    auto end = std::chrono::steady_clock::now() + std::chrono::seconds(seconds);
 
-    while (std::chrono::steady_clock::now() < deadline) {
-        char c{};
-        if (read(STDIN_FILENO, &c, 1) > 0) {
-            if (c == '\n' || c == '\r') break;
-            if (c == 127 || c == '\b') {
+#ifdef _WIN32
+
+    while (std::chrono::steady_clock::now() < end) {
+        if (_kbhit()) {
+            char c = _getch();
+
+            if (c == '\r') break;
+
+            if (c == '\b') {
                 if (!result.empty()) {
                     result.pop_back();
                     std::cout << "\b \b";
-                    std::cout.flush();
                 }
-            } else if (std::isprint(static_cast<unsigned char>(c))) {
+            }
+            else if (isprint(static_cast<unsigned char>(c))) {
                 result += c;
                 std::cout << c;
-                std::cout.flush();
             }
         }
     }
 
+#else
+    struct termios oldt, newt;
+    tcgetattr(STDIN_FILENO, &oldt);
+
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    while (std::chrono::steady_clock::now() < end) {
+        char c;
+        if (read(STDIN_FILENO, &c, 1) > 0) {
+
+            if (c == '\n') break;
+
+            if (c == 127) {
+                if (!result.empty()) {
+                    result.pop_back();
+                    std::cout << "\b \b";
+                }
+            }
+            else if (isprint(static_cast<unsigned char>(c))) {
+                result += c;
+                std::cout << c;
+            }
+        }
+    }
     tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+#endif
     return result;
 }
-
 } 

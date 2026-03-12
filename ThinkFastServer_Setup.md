@@ -1,29 +1,37 @@
 # Requirements
 
 * Windows 10 / Windows 11
-* MinGW GCC Compiler
+* MinGW-w64 GCC Compiler
 * C++17 support
+* WAMP Server
+* Web Browser (Chrome, Edge, Firefox)
 
 Recommended installation method:
 
-Install MSYS2 (includes MinGW GCC).
+Install **MinGW-w64 using WinLibs**.
 
 ---
 
 # Installing the Compiler
 
-## Install MSYS2 using Winget
+## Download MinGW (WinLibs)
 
-Open PowerShell or Command Prompt:
-
-```
-winget install -e --id MSYS2.MSYS2
-```
-
-After installation open **MSYS2 UCRT64** and run:
+Go to:
 
 ```
-pacman -S mingw-w64-ucrt-x86_64-gcc
+https://winlibs.com
+```
+
+Download the **latest GCC release for Windows**:
+
+* Win64
+* Without LLVM
+* `.zip` version
+
+Extract the archive to:
+
+```
+C:\mingw64
 ```
 
 ---
@@ -33,7 +41,25 @@ pacman -S mingw-w64-ucrt-x86_64-gcc
 Add the following directory to your Windows PATH:
 
 ```
-C:\msys64\ucrt64\bin
+C:\mingw64\bin
+```
+
+Steps:
+
+1. Press **Win + R**
+2. Type:
+
+```
+sysdm.cpl
+```
+
+3. Go to **Advanced → Environment Variables**
+4. Under **System Variables**, select **Path**
+5. Click **Edit → New**
+6. Add:
+
+```
+C:\mingw64\bin
 ```
 
 Verify installation:
@@ -42,12 +68,14 @@ Verify installation:
 g++ --version
 ```
 
+You should see a **GCC version number**.
+
 ---
 
 # Project Structure
 
 ```
-ThinkFast
+ThinkFast3
 │
 ├─ server_main.cpp
 ├─ src
@@ -63,13 +91,23 @@ ThinkFast
 │  └─ utils
 │     ├─ CSVManager.cpp
 │     └─ BotNames.cpp
+│
+├─ api
+├─ src/gui
+└─ data
 ```
 
 ---
 
 # Compiling the Server
 
-Navigate to the project root and run:
+Open **Command Prompt** and navigate to the project folder:
+
+```
+cd C:\wamp64\www\ThinkFast3
+```
+
+Compile the server:
 
 ```
 g++ -std=c++17 -O2 -o ThinkFastServer.exe ^
@@ -100,11 +138,17 @@ Start the server:
 ThinkFastServer.exe
 ```
 
-Output:
+Expected output:
 
 ```
 [ThinkFast] Loading dictionary...
+[ThinkFast] Dictionary ready (XXXX words).
 [ThinkFast] Server starting on port 8080
+[ThinkFast] Endpoints:
+   POST http://localhost:8080/auth
+   POST http://localhost:8080/validate
+   POST http://localhost:8080/leaderboard
+   POST http://localhost:8080/room
 ```
 
 Server URL:
@@ -112,6 +156,42 @@ Server URL:
 ```
 http://localhost:8080
 ```
+
+Leave this window open while the game is running.
+
+---
+
+# Starting the Web Interface
+
+1. Start **WAMP Server**
+2. Wait until the **tray icon turns green**
+3. Open your browser:
+
+```
+http://thinkfast/src/gui/
+```
+
+---
+
+# Testing the Connection
+
+Open the API endpoint:
+
+```
+http://thinkfast/api/leaderboard
+```
+
+Expected response:
+
+```
+{"ok":true,"players":[...]}
+```
+
+This confirms:
+
+* Apache is running
+* PHP routing works
+* The C++ server is connected
 
 ---
 
@@ -126,20 +206,13 @@ http://localhost:8080
 
 ---
 
-# Data Storage
+# Quick Start (Running the Game)
 
-User accounts are stored in:
-
-```
-data/users.csv
-```
-
-If the file does not exist, the server creates demo accounts:
-
-```
-heart / 123
-angel / 123
-```
+| Step | Action                                                          |
+| ---- | --------------------------------------------------------------- |
+| 1    | Run **ThinkFastServer.exe**                                     |
+| 2    | Start **WAMP → Start All Services**                             |
+| 3    | Open **[http://thinkfast/src/gui/](http://thinkfast/src/gui/)** |
 
 ---
 
@@ -173,4 +246,4 @@ http://192.168.1.10:8080
 
 # License
 
-Educational project for ThinkFast game backend.
+Educational project for the **ThinkFast multiplayer word game backend**.

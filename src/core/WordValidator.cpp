@@ -139,24 +139,47 @@ size_t WordValidator::dictionarySize() const {
 }
 
 bool WordValidator::queryAPI(const std::string& word) const {
+
     for (unsigned char c : word)
-        if (!std::isalpha(c)) return false;
+        if (!std::isalpha(c))
+            return false;
 
     const std::string cmd =
         "curl -s -o /dev/null -w \"%{http_code}\" --max-time 4 "
-        "\"https://api.dictionaryapi.dev/api/v2/entries/en/" + word + "\" 2>/dev/null";
+        "\"https://api.dictionaryapi.dev/api/v2/entries/en/" + word + "\" 2>nul";
 
-    FILE* pipe = popen(cmd.c_str(), "r");
-    if (!pipe) return false;
+    FILE* pipe = nullptr;
+
+#ifdef _WIN32
+    pipe = _popen(cmd.c_str(), "r");
+#else
+    pipe = popen(cmd.c_str(), "r");
+#endif
+
+    if (!pipe)
+        return false;
 
     char buf[8] = {};
+
     if (fgets(buf, sizeof(buf), pipe) == nullptr) {
+
+#ifdef _WIN32
+        _pclose(pipe);
+#else
         pclose(pipe);
+#endif
+
         return false;
     }
-    pclose(pipe);
 
-    const std::string code(buf);
+#ifdef _WIN32
+    _pclose(pipe);
+#else
+    pclose(pipe);
+#endif
+
+    std::string code(buf);
+
     return code.find("200") != std::string::npos;
 }
 
