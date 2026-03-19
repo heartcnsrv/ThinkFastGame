@@ -21,6 +21,7 @@
 
 namespace ThinkFast {
 
+// CSV-backed auth writes must not overlap, so auth-related endpoints share one lock.
 static std::mutex authMu;
 
 static void sendAll(sock_t fd, const std::string& data) {
@@ -83,6 +84,8 @@ void HttpServer::run() {
     while (running_) {
         sock_t client_fd = ::accept(server_fd, nullptr, nullptr);
         if (client_fd == SOCK_INVALID) continue;
+        // Each connection is handled in its own thread, then delegated into
+        // the corresponding manager for business logic.
         std::thread([this, client_fd]() {
             handleClient(client_fd);
             sock_close(client_fd);
@@ -98,6 +101,7 @@ void HttpServer::handleClient(sock_t fd) {
     char buf[65536];
     int  total = 0;
 
+    // This server accepts simple JSON POST requests only.
     while (total < static_cast<int>(sizeof(buf)) - 1) {
         int n = ::recv(fd, buf + total,
                        static_cast<int>(sizeof(buf) - 1) - total, 0);
@@ -151,6 +155,7 @@ void HttpServer::handleClient(sock_t fd) {
 
 
 std::string HttpServer::dispatch(const std::string& path, const std::string& body) {
+    // Path routing happens here; action-specific routing happens inside each handler.
     if (path == "/auth"         || path == "/auth/")         return routeAuth(body);
     if (path == "/validate"     || path == "/validate/")     return routeValidate(body);
     if (path == "/leaderboard"  || path == "/leaderboard/")  return routeLeaderboard(body);
@@ -166,6 +171,7 @@ std::string HttpServer::routeAuth(const std::string& body) {
 
     std::lock_guard<std::mutex> lk(authMu);
     auth_.reload();
+    // Reload before each auth request so the handler reads the latest CSV snapshot.
 
     if (action == "login") {
         Player* p = auth_.login(username, password);
@@ -201,6 +207,7 @@ std::string HttpServer::routeAuth(const std::string& body) {
         tmp.losses   = jsonGetInt(body, "losses");
         tmp.games    = jsonGetInt(body, "games");
         tmp.is_guest = false;
+        // Stats persistence is intentionally delegated to AuthManager.
         auth_.saveStats(tmp);
         return ok("\"message\":\"Stats saved.\"");
     }
@@ -221,6 +228,7 @@ std::string HttpServer::routeValidate(const std::string& body) {
 std::string HttpServer::routeLeaderboard(const std::string& /*body*/) {
     std::lock_guard<std::mutex> lk(authMu);
     auth_.reload();
+    // Leaderboard is computed from the same stored CSV data as login/register.
     auto rows = auth_.leaderboard();
 
     std::string arr = "[";
@@ -244,6 +252,7 @@ std::string HttpServer::routeRoom(const std::string& body) {
     std::string code   = jsonGet(body, "code");
     std::transform(code.begin(), code.end(), code.begin(), ::toupper);
 
+    // RoomManager owns all room transitions and room JSON payload construction.
     if (action == "create") {
         std::string mode = jsonGet(body, "mode");
         if (mode.empty()) mode = "last_letter";

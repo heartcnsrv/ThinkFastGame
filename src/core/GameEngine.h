@@ -7,6 +7,8 @@
 
 namespace ThinkFast {
 
+// GameEngine runs the terminal game rules. It deliberately stays separate
+// from persistence so AuthManager remains the only database-facing service.
 class GameEngine {
 public:
     explicit GameEngine(WordValidator& wv);

@@ -60,6 +60,8 @@ int main(int argc, char* argv[]) {
     MAKE_DIR("data");
 
     const std::string usersPath = "data/users.csv";
+    // The web backend uses the same CSV file as its user database so
+    // terminal mode and HTTP mode share one persistent account store.
     if (!fileExists(usersPath)) {
         std::ofstream f(usersPath);
         f << "\"username\",\"password\",\"wins\",\"losses\","
@@ -80,6 +82,10 @@ int main(int argc, char* argv[]) {
     std::cout << "[ThinkFast] Auth + RoomManager ready.\n";
 
     // ── Start HTTP server ────────────────────────────────────────
+    // server_main only wires the transport layer to the core services:
+    // HttpServer -> AuthManager (CSV users)
+    //            -> WordValidator (word checks)
+    //            -> RoomManager (live room state)
     ThinkFast::HttpServer server(port, auth, validator, rooms);
     g_server = &server;
 

@@ -19,6 +19,7 @@ CSVManager::loadUsers(const std::string& filepath) {
     bool first = true;
     while (std::getline(file, line)) {
         if (first) { first = false; continue; }
+        // Turn a CSV row into a typed record that higher layers can use.
         auto f = parseLine(line);
         if (f.size() < 6) continue;
         UserRecord u;
@@ -42,6 +43,7 @@ bool CSVManager::saveUsers(const std::string& filepath,
     }
     file << "\"username\",\"password\",\"wins\",\"losses\","
             "\"games_played\",\"joined_date\"\n";
+    // The whole logical table is rewritten each time for simplicity.
     for (const auto& u : users) {
         file << '"' << escape(u.username)    << "\","
              << '"' << escape(u.password)    << "\","
@@ -76,6 +78,7 @@ CSVManager::loadWords(const std::string& filepath) {
 
 
 std::vector<std::string> CSVManager::parseLine(const std::string& line) {
+    // Minimal CSV parser that keeps commas inside quoted fields intact.
     std::vector<std::string> fields;
     bool inQ = false;
     std::string cur;

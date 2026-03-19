@@ -8,6 +8,8 @@
 
 namespace ThinkFast {
 
+// WordValidator is the game's word service. It checks the built-in
+// dictionary first, then falls back to a public API and caches results.
 class WordValidator {
 public:
     WordValidator();

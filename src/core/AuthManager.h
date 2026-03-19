@@ -7,6 +7,8 @@
 
 namespace ThinkFast {
 
+// Login, registration, stat saving, and leaderboard reads
+// go through this class instead of touching users.csv directly.
 class AuthManager {
 public:
     explicit AuthManager(const std::string& usersPath);
@@ -30,6 +32,7 @@ public:
 
 private:
     std::string                          usersPath_;
+    // In-memory mirror of the CSV file. Most operations refresh this data and write it back to disk.
     std::vector<CSVManager::UserRecord>  records_;
     Player                               current_;
     bool                                 loggedIn_ = false;

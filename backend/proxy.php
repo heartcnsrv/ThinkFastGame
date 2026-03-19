@@ -2,6 +2,9 @@
 
 define('CPP_SERVER', 'http://127.0.0.1:8080');
 
+// Apache/PHP-facing bridge into the custom C++ backend.
+// The frontend can call PHP endpoints, and PHP forwards the raw JSON payload
+// to the matching C++ route so core logic stays centralized there.
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');

@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/config.php';
 
+// PHP room fallback that persists each room as a JSON file on disk.
 $body   = input();
 $action = $body['action']   ?? '';
 $player = trim($body['player'] ?? '');
@@ -258,6 +259,7 @@ function advanceTurn(array &$room): void {
 }
 
 function serverValidateWord(string $word): bool {
+    // Lightweight PHP-side dictionary for the fallback room implementation.
     static $dict = null;
     if ($dict === null) {
         $core = 'able,about,above,acid,acre,across,act,add,admit,adult,after,again,age,

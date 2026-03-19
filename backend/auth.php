@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/config.php';
 
+// PHP auth fallback that reads/writes the CSV database directly.
 $body   = input();
 $action = $body['action'] ?? '';
 

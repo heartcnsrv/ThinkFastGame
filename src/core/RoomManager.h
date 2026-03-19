@@ -14,6 +14,8 @@ namespace ThinkFast {
 
 enum class RoomStatus { WAITING, PLAYING, FINISHED };
 
+// Multiplayer room representation for the HTTP backend.
+// This is session state, not permanent account data.
 struct RoomPlayer {
     std::string name;
     int         hearts     = 3;
@@ -22,6 +24,7 @@ struct RoomPlayer {
     bool        is_bot     = false;
 };
 
+// Room stores all live data needed to reconstruct the current multiplayer state.
 struct Room {
     std::string              code;
     GameMode                 mode            = GameMode::LAST_LETTER;
@@ -41,6 +44,8 @@ struct Room {
     long long                created_at      = 0;
 };
 
+// RoomManager is the web multiplayer state machine behind /room requests.
+// It keeps rooms in memory and serializes access with a mutex.
 class RoomManager {
 public:
     explicit RoomManager(WordValidator& wv);

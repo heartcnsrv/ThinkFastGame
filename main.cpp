@@ -48,6 +48,8 @@ int main() {
     const std::string dataDir   = "data";
     const std::string usersPath = dataDir + "/users.csv";
 
+    // The terminal build keeps its persistent "database" as a CSV file.
+    // main.cpp ensures that storage exists before AuthManager reads from it.
     fs::create_directories(dataDir);
 
     if (!fs::exists(usersPath)) {
@@ -69,6 +71,10 @@ int main() {
     ThinkFast::ConsoleUI::info("Word API: api.dictionaryapi.dev (used for unknown words).");
     ThinkFast::ConsoleUI::pause(900);
 
+    // High-level dependency flow:
+    // users.csv -> AuthManager -> Screens
+    // dictionary -> WordValidator -> GameEngine/Screens
+    // GameEngine updates Player stats -> AuthManager persists them to CSV.
     ThinkFast::AuthManager auth(usersPath);
     ThinkFast::GameEngine  engine(validator);
     ThinkFast::Screens     screens(auth, engine, validator);

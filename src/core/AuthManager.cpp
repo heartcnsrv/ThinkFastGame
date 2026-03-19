@@ -7,6 +7,7 @@ namespace ThinkFast {
 AuthManager::AuthManager(const std::string& usersPath)
     : usersPath_(usersPath)
 {
+    // Load the current CSV snapshot as soon as the auth subsystem starts.
     reload();
 }
 
@@ -41,6 +42,7 @@ bool AuthManager::registerUser(const std::string& username,
     rec.password    = password;
     rec.joined_date = todayString();
 
+    // Registration appends a new logical row, then rewrites users.csv.
     records_.push_back(rec);
     CSVManager::saveUsers(usersPath_, records_);
     login(username, password);
@@ -49,6 +51,8 @@ bool AuthManager::registerUser(const std::string& username,
 
 void AuthManager::saveStats(const Player& player) {
     if (player.is_guest) return;
+    // Gameplay code updates Player in memory first. saveStats copies the
+    // changed counters into the matching stored record and rewrites the CSV.
     for (auto& rec : records_) {
         if (rec.username == player.username) {
             rec.wins         = player.wins;
@@ -76,6 +80,7 @@ bool AuthManager::userExists(const std::string& username) const {
 
 std::vector<CSVManager::UserRecord> AuthManager::leaderboard() const {
     auto sorted = records_;
+    // Leaderboard is derived from stored user records, not a separate table.
     std::sort(sorted.begin(), sorted.end(),
               [](const CSVManager::UserRecord& a,
                  const CSVManager::UserRecord& b){
@@ -85,11 +90,14 @@ std::vector<CSVManager::UserRecord> AuthManager::leaderboard() const {
 }
 
 void AuthManager::reload() {
+    // HTTP mode can call reload() before each request to avoid serving stale
+    // data if another request already changed the CSV file on disk.
     records_ = CSVManager::loadUsers(usersPath_);
 }
 
 
 void AuthManager::fillPlayer(const CSVManager::UserRecord& rec) {
+    // Convert a storage record into the richer runtime Player structure.
     current_             = Player{};
     current_.username    = rec.username;
     current_.password    = rec.password;

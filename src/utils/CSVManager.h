@@ -4,6 +4,8 @@
 
 namespace ThinkFast {
 
+// CSVManager is the low-level file-format helper for the project's
+// CSV-backed storage. It handles parsing/serialization only.
 class CSVManager {
 public:
     struct UserRecord {

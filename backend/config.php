@@ -4,6 +4,9 @@ define('DATA_DIR',   __DIR__ . '/../data/');
 define('USERS_CSV',  DATA_DIR . 'users.csv');
 define('ROOMS_DIR',  DATA_DIR . 'rooms/');
 
+// Shared PHP helpers for the fallback/file-based backend path.
+// This mirrors the project's simple "database as files" approach:
+// users are stored in CSV, and PHP rooms are stored as JSON files.
 if (!is_dir(ROOMS_DIR)) {
     mkdir(ROOMS_DIR, 0755, true);
 }
@@ -59,6 +62,7 @@ function loadUsers(): array {
 }
 
 function saveUsers(array $users): void {
+    // Keep writes simple by regenerating the entire CSV file each time.
     $fh = fopen(USERS_CSV, 'w');
     fputcsv($fh, ['username','password','wins','losses','games_played','joined_date']);
     foreach ($users as $u) {
@@ -83,6 +87,8 @@ function roomPath(string $code): string {
 }
 
 function loadRoom(string $code): ?array {
+    // PHP room state lives on disk per room code, unlike the C++ room server
+    // which keeps room state in memory while the process is running.
     $path = roomPath($code);
     if (!file_exists($path)) return null;
     $data = json_decode(file_get_contents($path), true);

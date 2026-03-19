@@ -36,6 +36,8 @@ void RoomManager::advanceTurn(Room& r) {
     auto& cur = r.players[r.current_idx];
     if (!cur.is_bot || cur.eliminated) return;
 
+    // Bot turns are resolved inside the backend so clients only need the
+    // resulting room snapshot, not the game rules for automated players.
     if (r.mode == GameMode::LAST_LETTER) {
         std::unordered_set<std::string> used(r.used_words.begin(), r.used_words.end());
         std::string word = wv_.cpuPickWord(r.required_letter, used, 1);
@@ -121,6 +123,7 @@ std::string RoomManager::err(const std::string& msg) const {
 
 std::string RoomManager::roomToJson(const Room& r,
                                      const std::string& forPlayer) const {
+    // Central JSON builder so all room endpoints expose the same shape.
 
     std::string st = (r.status == RoomStatus::WAITING)  ? "waiting"
                    : (r.status == RoomStatus::PLAYING)  ? "playing"
@@ -197,6 +200,8 @@ std::string RoomManager::create(const std::string& player,
                                  int timeLimit, int maxPlayers) {
     std::lock_guard<std::mutex> lk(mu_);
 
+    // Room lifetime is tied to the running server process.
+    // Only user accounts are persisted across restarts.
     Room r;
     do { r.code = generateCode(); } while (rooms_.count(r.code));
 
@@ -256,6 +261,7 @@ std::string RoomManager::state(const std::string& player,
         if (p.name == player) { p.last_seen = nowSec(); break; }
 
     if (r.status == RoomStatus::PLAYING) {
+        // Polling /state also acts as a heartbeat for disconnect detection.
         const long long now = nowSec();
         for (auto& p : r.players) {
             if (!p.eliminated && !p.is_bot && (now - p.last_seen) > 15) {
@@ -327,6 +333,7 @@ std::string RoomManager::move(const std::string& player,
     if (val.empty()) return err("No value provided.");
 
     if (r.mode == GameMode::LAST_LETTER) {
+        // Last Letter flow: validate constraints, update room state, advance turn.
 
         if (val[0] != r.required_letter)
             return err(std::string("Word must start with '") +
@@ -349,6 +356,8 @@ std::string RoomManager::move(const std::string& player,
         if (r.status == RoomStatus::PLAYING) advanceTurn(r);
 
     } else {
+        // One-by-One flow: append one letter, then decide whether the
+        // candidate completed a word, failed, or should keep growing.
         
         if (val.size() != 1)
             return err("Submit exactly one letter.");

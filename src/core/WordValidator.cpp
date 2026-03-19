@@ -47,6 +47,7 @@ bool WordValidator::isValid(const std::string& word) {
     auto it = apiCache_.find(w);
     if (it != apiCache_.end()) return it->second;
 
+    // Only unknown words pay the network cost, and only once per process.
     bool result = queryAPI(w);
     apiCache_[w] = result;
 
@@ -148,6 +149,8 @@ bool WordValidator::queryAPI(const std::string& word) const {
         "curl -s -o /dev/null -w \"%{http_code}\" --max-time 4 "
         "\"https://api.dictionaryapi.dev/api/v2/entries/en/" + word + "\" 2>nul";
 
+    // This keeps the validator dependency-light by shelling out to curl
+    // instead of adding a dedicated C++ HTTP client library.
     FILE* pipe = nullptr;
 
 #ifdef _WIN32
@@ -205,6 +208,7 @@ std::string WordValidator::stripQuotes(const std::string& s) {
 
 
 void WordValidator::buildBuiltinDictionary() {
+    // The local dictionary handles most validation requests without a network call.
     static const char* const WORDS[] = {
         // 3-letter
         "ace","act","add","age","ago","aid","aim","air","all","ant","any","ape","arc",

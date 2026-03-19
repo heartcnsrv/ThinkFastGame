@@ -23,6 +23,8 @@ void GameEngine::runLastLetter(GameSession& sess) {
     sess.running = true;
     usedSet_.clear();
 
+    // The opening word seeds the rest of the round state:
+    // last_word -> required_letter -> future move validation.
     std::string start = wv_.randomStartWord();
     sess.last_word        = start;
     sess.required_letter  = wv_.lastChar(start);
@@ -59,6 +61,8 @@ void GameEngine::runOneByOne(GameSession& sess) {
     sess.running = true;
     sess.building.clear();
 
+    // One-by-One grows a shared partial word until it becomes valid
+    // or reaches a dead end with no legal continuation.
     while (sess.running) {
         Player* cur = sess.currentPlayer();
         if (!cur || cur->eliminated) { sess.nextPlayer(); continue; }
@@ -190,6 +194,8 @@ void GameEngine::endGame(GameSession& sess) {
     for (auto* p : sess.players)
         if (!p->eliminated) { winner = p; break; }
 
+    // These counters are updated in memory only. The caller is responsible
+    // for persisting them later through AuthManager::saveStats().
     for (auto* p : sess.players) {
         if (p->eliminated) p->losses++;
         else               p->wins++;

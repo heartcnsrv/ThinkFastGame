@@ -31,6 +31,9 @@
 
 namespace ThinkFast {
 
+// HttpServer is the transport layer for the web version of the game.
+// It converts raw HTTP requests into calls into AuthManager, WordValidator,
+// and RoomManager, which hold the actual application logic.
 class HttpServer {
 public:
     HttpServer(int port,
@@ -49,6 +52,7 @@ private:
     RoomManager&   rooms_;
     std::atomic<bool> running_{true};
 
+    // Request flow: socket -> handleClient -> dispatch -> routeX -> manager/service.
     void handleClient(sock_t fd);
     std::string dispatch(const std::string& path, const std::string& body);
 
