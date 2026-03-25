@@ -1,34 +1,22 @@
-//
-//  ThinkFast  |  server_main.cpp
-//
-//  C++ HTTP backend — compile on Windows with MinGW:
-//
-//  g++ -std=c++17 -O2 -o ThinkFastServer.exe ^
-//      server_main.cpp ^
-//      src/core/RoomManager.cpp ^
-//      src/server/HttpServer.cpp ^
-//      src/core/GameTypes.cpp ^
-//      src/core/WordValidator.cpp ^
-//      src/core/AuthManager.cpp ^
-//      src/utils/CSVManager.cpp ^
-//      src/utils/BotNames.cpp ^
-//      -lws2_32
-//
-//  Then run:  ThinkFastServer.exe
-// 
+/*
+ * HTTP backend entry point.
+ * This file prepares shared CSV storage,
+ * creates the backend services,
+ * and starts the custom HTTP server used by the browser frontend.
+ */
 
 #include "src/core/AuthManager.h"
-#include "src/core/WordValidator.h"
 #include "src/core/RoomManager.h"
+#include "src/core/WordValidator.h"
 #include "src/server/HttpServer.h"
-#include <iostream>
-#include <fstream>
 #include <csignal>
 #include <cstdlib>
-#include <sys/stat.h> 
+#include <fstream>
+#include <iostream>
+#include <sys/stat.h>
 
 #ifdef _WIN32
-  #include <direct.h> 
+  #include <direct.h>
   #define MAKE_DIR(p) _mkdir(p)
 #else
   #include <unistd.h>
@@ -39,7 +27,9 @@ static ThinkFast::HttpServer* g_server = nullptr;
 
 static void onSignal(int) {
     std::cout << "\n[ThinkFast] Shutting down...\n";
-    if (g_server) g_server->stop();
+    if (g_server) {
+        g_server->stop();
+    }
     std::exit(0);
 }
 
@@ -49,19 +39,21 @@ static bool fileExists(const std::string& path) {
 }
 
 int main(int argc, char* argv[]) {
-    std::signal(SIGINT,  onSignal);
+    std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);
 
     int port = 8080;
     if (argc > 1) {
-        try { port = std::stoi(argv[1]); } catch (...) {}
+        try {
+            port = std::stoi(argv[1]);
+        } catch (...) {
+        }
     }
 
     MAKE_DIR("data");
 
     const std::string usersPath = "data/users.csv";
-    // The web backend uses the same CSV file as its user database so
-    // terminal mode and HTTP mode share one persistent account store.
+    /* Terminal mode and web mode share the same users.csv account store. */
     if (!fileExists(usersPath)) {
         std::ofstream f(usersPath);
         f << "\"username\",\"password\",\"wins\",\"losses\","
@@ -71,7 +63,7 @@ int main(int argc, char* argv[]) {
         std::cout << "[ThinkFast] Created data/users.csv with demo accounts.\n";
     }
 
-    // ── Initialise subsystems ────────────────────────────────────
+    /* Build the shared backend services before accepting requests. */
     std::cout << "[ThinkFast] Loading dictionary...\n";
     ThinkFast::WordValidator validator;
     std::cout << "[ThinkFast] Dictionary ready ("
@@ -81,11 +73,12 @@ int main(int argc, char* argv[]) {
     ThinkFast::RoomManager rooms(validator);
     std::cout << "[ThinkFast] Auth + RoomManager ready.\n";
 
-    // ── Start HTTP server ────────────────────────────────────────
-    // server_main only wires the transport layer to the core services:
-    // HttpServer -> AuthManager (CSV users)
-    //            -> WordValidator (word checks)
-    //            -> RoomManager (live room state)
+    /*
+     * server_main only wires the transport layer to the core services:
+     * HttpServer -> AuthManager
+     *            -> WordValidator
+     *            -> RoomManager
+     */
     ThinkFast::HttpServer server(port, auth, validator, rooms);
     g_server = &server;
 

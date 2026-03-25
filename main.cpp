@@ -1,35 +1,24 @@
-// 
-//  ThinkFast  |  main.cpp
-//
-//  Entry point.  Wires together:
-//    WordValidator  — two-layer word check (local dict + API)
-//    AuthManager    — login / register / guest / CSV persistence
-//    GameEngine     — Last Letter and One-by-One game loops
-//    Screens        — terminal UI screens
-//
-//  Word validation flow for human turns:
-//    1. Instant check in built-in local dictionary
-//    2. If not found locally -> curl call to:
-//       https://api.dictionaryapi.dev/api/v2/entries/en/<word>
-//       HTTP 200 = valid.  HTTP 404 = invalid.
-//    Results are cached per session so the same word never hits
-//    the API twice.
-//
-//  Build:
-//    make          (uses the provided Makefile)
-//    cmake ..      (uses the provided CMakeLists.txt)
-// 
+/*
+ * Terminal application entry point.
+ * This file prepares the CSV storage,
+ * creates the core services,
+ * and starts the console login and menu flow.
+ *
+ * Main dependency flow:
+ * users.csv -> AuthManager -> Screens
+ * dictionary -> WordValidator -> GameEngine and Screens
+ * GameEngine updates Player stats -> AuthManager saves them to CSV
+ */
 
 #include "src/core/WordValidator.h"
 #include "src/core/AuthManager.h"
 #include "src/core/GameEngine.h"
 #include "src/ui/ConsoleUI.h"
 #include "src/ui/Screens.h"
-#include <iostream>
-#include <filesystem>
 #include <csignal>
+#include <filesystem>
 #include <fstream>
-
+#include <iostream>
 
 static void onSignal(int) {
     ThinkFast::ConsoleUI::showCursor();
@@ -38,7 +27,7 @@ static void onSignal(int) {
 }
 
 int main() {
-    std::signal(SIGINT,  onSignal);
+    std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);
 
     ThinkFast::ConsoleUI::hideCursor();
@@ -48,8 +37,7 @@ int main() {
     const std::string dataDir   = "data";
     const std::string usersPath = dataDir + "/users.csv";
 
-    // The terminal build keeps its persistent "database" as a CSV file.
-    // main.cpp ensures that storage exists before AuthManager reads from it.
+    /* Create the local CSV storage first so AuthManager can read it safely. */
     fs::create_directories(dataDir);
 
     if (!fs::exists(usersPath)) {
@@ -71,17 +59,14 @@ int main() {
     ThinkFast::ConsoleUI::info("Word API: api.dictionaryapi.dev (used for unknown words).");
     ThinkFast::ConsoleUI::pause(900);
 
-    // High-level dependency flow:
-    // users.csv -> AuthManager -> Screens
-    // dictionary -> WordValidator -> GameEngine/Screens
-    // GameEngine updates Player stats -> AuthManager persists them to CSV.
     ThinkFast::AuthManager auth(usersPath);
     ThinkFast::GameEngine  engine(validator);
     ThinkFast::Screens     screens(auth, engine, validator);
 
     while (true) {
         screens.runLogin();
-        if (auth.isLoggedIn())
+        if (auth.isLoggedIn()) {
             screens.runMainMenu();
+        }
     }
 }
